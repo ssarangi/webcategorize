@@ -18,6 +18,7 @@ import urllib2
 import urlparse
 import optparse
 import hashlib
+from string import *
 from cgi import escape
 from traceback import format_exc
 from Queue import Queue, Empty as QueueEmpty
@@ -309,7 +310,17 @@ def parse_options():
         parser.print_help(sys.stderr)
         parser.error("options -L and -u are mutually exclusive")
 
-    return opts, args
+    # Check the URL first
+    url = args[0]
+
+    if (len(url) > 8):
+        index_http = find(url, "http://", 0, 7)
+        index_https = find(url, "http://", 0, 8)
+
+        if (index_http == -1 and index_https == -1):
+            url = "http://" + url
+
+    return opts, url, args
 
 class DotWriter:
 
@@ -353,9 +364,7 @@ class DotWriter:
     
 
 def main():    
-    opts, args = parse_options()
-
-    url = args[0]
+    opts, url, args = parse_options()
 
     if opts.links:
         getLinks(url)
