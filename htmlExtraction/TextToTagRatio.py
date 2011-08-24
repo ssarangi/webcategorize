@@ -1,39 +1,34 @@
 import string
-import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 from lxml.html import clean
 from HTMLParser import HTMLParser
-import numpy as np
 
 class TagParser(HTMLParser):
     """Try to keep accurate pointer of parsing location."""
     def __init__(self):
         HTMLParser.__init__(self)
         self.tag_chars = 0
-        self.nontag_chars = 0
+        self.text_chars = 0
 
     def handle_starttag(self, tag, attrs):
-        print "Found start tag: %s" % tag
+        # print "Found start tag: %s" % tag
         # accumulate the length of the attrs
         attr_len = 0
-        for attr in attrs:
-            attr_len += len(attr)
-        
-        # Now count the number of attribute values
-        total_attrs = len(attrs) / 2
-        attr_len += total_attrs  # Add the length of '=' removed by the parser
-        
-        tag_len = len(tag) + attr_len
-        self.tag_chars += tag_len
-    
+        for attr_pair in attrs:
+            attr_len += len(attr_pair[0]) + len(attr_pair[1]) + 2 + 1 # 2 for quotes, 1 for =
+                
+        tag_len = len(tag) + attr_len + 2
+        self.tag_chars += tag_len        
+        print "Tag Found: %s" % (tag)        
+            
     def handle_endtag(self, tag):
-        print "Found end tag: %s" % tag
-        self.tag_chars += len(tag)
+        # print "Found end tag: %s" % tag
+        self.tag_chars += len(tag) + 1 + 2 # For '/', '<' & '>'
         
     def handle_data(self, data):
         if (data.strip() != ""):
-            print "Found data: %s" % data
-            self.nontag_chars += len(data)
+            print "Text Found: %s" % data
+            self.text_chars += len(data)
         
 class TextToTagRatio:
     def __init__(self, html_file, removal_tag_list = []):
@@ -46,28 +41,33 @@ class TextToTagRatio:
         cleaned_html = cleaner.clean_html(self.html)
         self.html = cleaned_html
         self.html_list = string.split(self.html, '\n')    
-        self.parser = TagParser()
         self.line_stats = []
         
     def analyze_html(self):
         line_no = 0
         for line in self.html_list:
-            self.parser.feed(line)
-            self.parser.reset()
+            parser = TagParser()
+            parser.feed(line)
+            parser.reset()
             self.line_stats.append(0)
-            self.line_stats[line_no] = float(self.parser.tag_chars) / float(self.parser.nontag_chars)
+            if (parser.tag_chars <= 0):
+                self.line_stats[line_no] = float(parser.text_chars)
+            else:
+                self.line_stats[line_no] = float(parser.text_chars) / float(parser.tag_chars)
+            print line
+            print "Line No %s: ---> Tag Chars: %s ---> Text Chars: %s" % (line_no, parser.tag_chars, parser.text_chars)
+            raw_input()
             line_no += 1
+            parser.close()
             
-        self.parser.close()
         
     def display_results(self):
         for e in self.line_stats:
             print e
     
     def plot_graph(self):
-        r = range(0, len(self.line_stats) - 1)
-        twoD = np.array([r, self.line_stats])
-        n, bins, patches = plt.hist(twoD, len(self.line_stats), normed=1, facecolor='g', alpha=0.75)
+        r = range(0, len(self.line_stats))
+        plt.plot(r, self.line_stats)
         plt.grid(True)
         plt.show()
         
