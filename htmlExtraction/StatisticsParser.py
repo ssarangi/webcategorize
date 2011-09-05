@@ -3,6 +3,19 @@ import string
 
 global debug
 
+global html_tag_list = ["meta",
+                         "h1",
+                         "h2",
+                         "h3",
+                         "h4",
+                         "h5",
+                         "h6",
+                         "p",
+                         "li",
+                         "head",
+                         "title"                         
+                        ]
+
 def extract_key_value_pair(attribs, attrib_key_1, key, attrib_key_2):
     ''' So for HTML, lets say we have a Meta tag. So that might have as
     a key with name="keywords". So attrib_key_1 = name & key = "keywords"
@@ -25,8 +38,12 @@ class HandleTarget:
     ''' Class to Handle the Meta Tags and other content lines we are looking for
         eg. h1, h2, etc '''
     def __init__(self):
-        self.handle_tags = {"meta": self.handle_meta_tags,}   
-                
+        self.handle_tags = {"meta": self.handle_meta_tags,
+                            "h1": self}   
+    
+    def handle_generic(self, attribs):
+        
+            
     def handle_meta_tags(self, attribs):
         print "Handling Meta Tags"
         keywords, content = extract_key_value_pair(attribs, "name", "keywords", "content")
@@ -71,16 +88,20 @@ class CollectorTarget:
 class StatisticsParser:
     def __init__(self, html_file):
         self.parser = lxml.etree.HTMLParser(remove_blank_text=True,
-                                       remove_comments=True,
-                                       target=CollectorTarget())
+                                            remove_comments=True,
+                                            target=CollectorTarget())
         
         self.tree = lxml.etree.parse(html_file, parser=self.parser)
         
         meta_tags = self.tree.getroot().
         print self.parser.target.handle_target.keywords
-#        for event in self.parser.target.events:
-#            print event
-            
+
+    def search_for_text(self):
+        global html_tag_list
+        for event, element in etree.iterparse(some_file_like,
+                                              events=("data")):
+        print("%5s, %4s, %s" % (event, element.tag, element.text))        
+
 
 if __name__ == "__main__":
     global debug
