@@ -37,4 +37,12 @@ class StringUtils:
             new_str.append(string)
         
         return new_str
+    
+    @staticmethod
+    def get_word_frequency(orig_string, split_separator):
+        ''' Calculate the Keyword Statistics '''
+        # orig_string: Original String
+        # split_separator: Word used to split the string
+        #try:
+        return len(orig_string.split(split_separator)) - 1    
         

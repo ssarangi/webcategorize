@@ -1,44 +1,10 @@
 from xlrd import open_workbook
 from Utils import *
 import DB
-
-class KeywordRelationship:
-    def __init__(self, sl1, sl2, sl3, kwrd):
-        self.sl1 = sl1
-        self.sl2 = sl2
-        self.sl3 = sl3
-        self.keyword = kwrd
-        
-    def __str__(self):
-        return self.sl1 + " -- " + self.sl2 + " -- " + self.sl3 + " -- " + self.keyword + "\n"
+from StatisticsParser import *
+from KeywordRelationship import *
 
 
-class DBModel:
-    ''' The Database Model used for getting querying the DB and getting results '''
-    def __init__(self, db):
-        self.db = db
-                
-    def find_keyword_db(self, keyword):        
-        kwrd_id, keyword = self.db.query('keyword_table', ['keyword'], 'keyword', keyword)
-            
-        rel_id, sl1_id, sl2_id, sl3_id, kwrd_id = self.db.query('relationship', ["sl1_index", "sl2_index", "sl3_index", "keyword_index"], 'keyword_index', kwrd_id)
-        sl1_id, sl1 = self.db.query('service_line_1', ["sl1_keyword"], 'id', sl1_id)
-        sl2_id, sl2 = self.db.query('service_line_2', ["sl2_keyword"], 'id', sl2_id)
-        sl3_id, sl3 = self.db.query('service_line_3', ["sl3_keyword"], 'id', sl3_id)
-            
-        rel = KeywordRelationship(sl1, sl2, sl3, keyword)
-        
-        print rel
-        
-    def keyword_list(self):
-        kwrd_list = []
-        rows = self.db.query_all('keyword_table')
-        for row in rows:
-            k_id, kwrd = row
-            kwrd_list.append(kwrd) 
-        
-        return kwrd_list
- 
 class ExcelInterface:
     def __init__(self, db):
         self.relationships = [] 
@@ -79,11 +45,6 @@ class ExcelInterface:
                 serialized_col.append(k)
         
         serialized_col = set(serialized_col)
-
-#        self._insert('service_line_1', 'sl1_keyword', sl1_set)
-#        self._insert('service_line_2', 'sl2_keyword', sl2_set)
-#        self._insert('service_line_3', 'sl3_keyword', sl3_set)        
-#        self._insert('keyword_table', 'keyword', serialized_col)
         
         self.db.insert_many('service_line_1', 'sl1_keyword', sl1_set)
         self.db.insert_many('service_line_2', 'sl2_keyword', sl2_set)
@@ -137,8 +98,16 @@ if __name__ == "__main__":
     if (db.is_DB_new()):
         create_DB(db)
     
-    db_explore = DBModel(db)
+    dbModel = DB.DBModel(db)
     # db_explore.find_keyword_db('Portal')
-    kwrd_list = db_explore.keyword_list()
-#    for kwrd in kwrd_list:
-#        print kwrd
+    kwrd_list = dbModel.keyword_list()
+    
+    #TODO: We shouldn't have empty keywords. But if we do remove them here.
+    index = 0
+    
+    kwrd_list = [k for k in kwrd_list if k.strip() != ""]
+    
+    ss = StatisticsParser('test.html', dbModel)
+    ss.accumulate_text_from_tags()
+    page_stats = ss.search_for_keywords(kwrd_list)
+    print page_stats  
