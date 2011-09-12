@@ -1,6 +1,6 @@
 from xlrd import open_workbook
-import sqlite3
-import os
+from Utils import *
+import DB
 
 class KeywordRelationship:
     def __init__(self, sl1, sl2, sl3, kwrd):
@@ -12,88 +12,16 @@ class KeywordRelationship:
     def __str__(self):
         return self.sl1 + " -- " + self.sl2 + " -- " + self.sl3 + " -- " + self.keyword + "\n"
 
-class Utils:
-    @staticmethod
-    def remove_text_from_string(orig_str, to_be_removed_str):
-        new_str = orig_str[len(to_be_removed_str):]
-        new_str = new_str.replace("'", " ").strip()
-        return new_str
-    
-    @staticmethod
-    def remove_empty_rows(column):
-        final_ls = []
-        for col in column:
-            if (str(col).find('empty') == -1):
-                final_ls.append(str(col))
-                
-        return final_ls
-    
-    @staticmethod
-    def reparse_keywords(keywords_column):
-        ''' Keyword lists can be separated by a separator '|'. For this 
-            reason we need to split them and create separate rows for them '''
-        new_column = []
-        for keyword_row in keywords_column:
-            # Take the row and replace the '|' character with ','
-            keyword_row_text = Utils.remove_text_from_string(str(keyword_row), "text:u'")
-            kwrd_row_list = [s.strip() for s in keyword_row_text.replace('|', ',').split(',')]
-            new_column.append(kwrd_row_list)
-        
-        return new_column
-    
-    @staticmethod
-    def add_quotes(string_list):
-        new_str = []
-        for string in string_list:
-            string = "'" + string + "'"
-            new_str.append(string)
-        
-        return new_str
-        
-class DB:
-    def __init__(self, db_filename, schema_filename):
-        db_is_new = not os.path.exists(db_filename)
-        self.conn = sqlite3.connect(db_filename)
-        if db_is_new:
-            print 'Creating schema'
-            with open(schema_filename, 'rt') as f:
-                schema = f.read()
-            self.conn.executescript(schema)
 
-        self.cursor = self.conn.cursor()
-
-    
-    def query(self, table, query_list, column, value, all_values=False):
-        q_str = ','.join(query_list)
-        
-        sql_query = """
-          select id, %s from %s where %s='%s'
-        """ % (q_str, table, column, value)
-        
-        self.cursor.execute(sql_query)
-        
-        if (all_values == False):
-            return self.cursor.fetchall()[0]
-        else:
-            return [row for row in self.cursor.fetchall()]
-            
-    def insert(self, table_name, column_list, data_list):
-        ''' Both column_list & data_list are expected to be list of strings '''
-        col_str = ','.join(column_list)
-        data_list = Utils.add_quotes(data_list)
-        data_str = ','.join(data_list)
-        
-        sql_query = """insert into %s (%s) values(%s)""" % (table_name, col_str, data_str)
-        self.conn.execute(sql_query)
-    
-class DBExplore:
+class DBModel:
+    ''' The Database Model used for getting querying the DB and getting results '''
     def __init__(self, db):
         self.db = db
                 
     def find_keyword_db(self, keyword):        
         kwrd_id, keyword = self.db.query('keyword_table', ['keyword'], 'keyword', keyword)
             
-        id, sl1_id, sl2_id, sl3_id, kwrd_id = self.db.query('relationship', ["sl1_index", "sl2_index", "sl3_index", "keyword_index"], 'keyword_index', kwrd_id)
+        rel_id, sl1_id, sl2_id, sl3_id, kwrd_id = self.db.query('relationship', ["sl1_index", "sl2_index", "sl3_index", "keyword_index"], 'keyword_index', kwrd_id)
         sl1_id, sl1 = self.db.query('service_line_1', ["sl1_keyword"], 'id', sl1_id)
         sl2_id, sl2 = self.db.query('service_line_2', ["sl2_keyword"], 'id', sl2_id)
         sl3_id, sl3 = self.db.query('service_line_3', ["sl3_keyword"], 'id', sl3_id)
@@ -101,6 +29,15 @@ class DBExplore:
         rel = KeywordRelationship(sl1, sl2, sl3, keyword)
         
         print rel
+        
+    def keyword_list(self):
+        kwrd_list = []
+        rows = self.db.query_all('keyword_table')
+        for row in rows:
+            k_id, kwrd = row
+            kwrd_list.append(kwrd) 
+        
+        return kwrd_list
  
 class ExcelInterface:
     def __init__(self, db):
@@ -123,17 +60,17 @@ class ExcelInterface:
         self.raw_sl3 = sheet0.col_slice(5, 2)
         self.raw_keywords = sheet0.col_slice(10, 2)
     
-        sl1_list = [Utils.remove_text_from_string(s, "text:u'") for s in Utils.remove_empty_rows(self.raw_sl1)] 
-        sl2_list = [Utils.remove_text_from_string(s, "text:u'") for s in Utils.remove_empty_rows(self.raw_sl2)]
-        sl3_list = [Utils.remove_text_from_string(s, "text:u'") for s in Utils.remove_empty_rows(self.raw_sl3)]
+        sl1_list = [StringUtils.remove_text_from_string(s, "text:u'") for s in StringUtils.remove_empty_rows(self.raw_sl1)] 
+        sl2_list = [StringUtils.remove_text_from_string(s, "text:u'") for s in StringUtils.remove_empty_rows(self.raw_sl2)]
+        sl3_list = [StringUtils.remove_text_from_string(s, "text:u'") for s in StringUtils.remove_empty_rows(self.raw_sl3)]
          
         sl1_set = set(sl1_list)
         sl2_set = set(sl2_list)
         sl3_set = set(sl3_list)
         
-        keywords_column = Utils.remove_empty_rows(self.raw_keywords)
+        keywords_column = StringUtils.remove_empty_rows(self.raw_keywords)
             
-        keywords_column = Utils.reparse_keywords(keywords_column)
+        keywords_column = StringUtils.reparse_keywords(keywords_column)
             
         # serialize the keyword column
         serialized_col = []
@@ -143,10 +80,15 @@ class ExcelInterface:
         
         serialized_col = set(serialized_col)
 
-        self._insert('service_line_1', 'sl1_keyword', sl1_set)
-        self._insert('service_line_2', 'sl2_keyword', sl2_set)
-        self._insert('service_line_3', 'sl3_keyword', sl3_set)        
-        self._insert('keyword_table', 'keyword', serialized_col)
+#        self._insert('service_line_1', 'sl1_keyword', sl1_set)
+#        self._insert('service_line_2', 'sl2_keyword', sl2_set)
+#        self._insert('service_line_3', 'sl3_keyword', sl3_set)        
+#        self._insert('keyword_table', 'keyword', serialized_col)
+        
+        self.db.insert_many('service_line_1', 'sl1_keyword', sl1_set)
+        self.db.insert_many('service_line_2', 'sl2_keyword', sl2_set)
+        self.db.insert_many('service_line_3', 'sl3_keyword', sl3_set)        
+        self.db.insert_many('keyword_table', 'keyword', serialized_col)        
         
         # Generate the relationship in memory
         total_items = len(sl1_list)
@@ -167,25 +109,36 @@ class ExcelInterface:
         ''' relationships: A List of relationship instance object '''
         global conn
         kwrd = ""
+        data_list = []
         for rel in relationships:
             sl1_id, kwrd = self.db.query("service_line_1", ["sl1_keyword"], "sl1_keyword", rel.sl1)
             sl2_id, kwrd = self.db.query("service_line_2", ["sl2_keyword"], "sl2_keyword", rel.sl2)
             sl3_id, kwrd = self.db.query("service_line_3", ["sl3_keyword"], "sl3_keyword", rel.sl3)
             kwrd_id, kwrd = self.db.query("keyword_table", ["keyword"], "keyword", rel.keyword)
             
-            self.db.insert("relationship", ["sl1_index", "sl2_index", "sl3_index", "keyword_index"], [str(sl1_id), str(sl2_id), str(sl3_id), str(kwrd_id)])
-            # sql_query = """insert into relationship (sl1_index, sl2_index, sl3_index, keyword_index)  
-            #                values(%s, %s, %s, %s)""" % (sl1_id, sl2_id, sl3_id, kwrd_id)
+            temp_list = [sl1_id, sl2_id, sl3_id, kwrd_id]
+            # self.db.insert("relationship", ["sl1_index", "sl2_index", "sl3_index", "keyword_index"], 
+            #               [str(sl1_id), str(sl2_id), str(sl3_id), str(kwrd_id)])
+            data_list.append(temp_list)
             
-            # conn.execute(sql_query)
+        self.db.insert_many_list('relationship', ["sl1_index", "sl2_index", "sl3_index", "keyword_index"], data_list)
+    
+def create_DB(db):
+    ''' Read Excel File and recreate the Database '''
+    excel_interface = ExcelInterface(db)
+    relationships = excel_interface.read_excel('automapping.xls')
+    excel_interface.create_relationship_db(relationships)    
     
 if __name__ == "__main__":
     db_filename = 'keywords.db'
     schema_filename = 'keywords_schema.sql'    
-    db = DB(db_filename, schema_filename)
-    excel_interface = ExcelInterface(db)
-    relationships = excel_interface.read_excel('automapping.xls')
-    excel_interface.create_relationship_db(relationships)
+    db = DB.DB(db_filename, schema_filename)
+
+    if (db.is_DB_new()):
+        create_DB(db)
     
-    db_explore = DBExplore(db)
-    db_explore.find_keyword_db('Portal')
+    db_explore = DBModel(db)
+    # db_explore.find_keyword_db('Portal')
+    kwrd_list = db_explore.keyword_list()
+#    for kwrd in kwrd_list:
+#        print kwrd
