@@ -1,6 +1,6 @@
 import lxml.etree
 import string, StringIO
-from Utils import *
+from globals.Utils import *
 
 global debug
 

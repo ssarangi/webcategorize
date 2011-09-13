@@ -1,6 +1,6 @@
 import sqlite3, os
-from Utils import *
-from KeywordRelationship import *
+from globals.Utils import *
+from htmlExtraction.KeywordRelationship import *
 
 class DB:
     def __init__(self, db_filename, schema_filename):

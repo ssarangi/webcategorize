@@ -1,9 +1,9 @@
 from xlrd import open_workbook
-from Utils import *
-import DB
+from globals.Utils import *
+from DB.DBInterface import *
 from StatisticsParser import *
 from KeywordRelationship import *
-from imports import *
+from globals.global_imports import *
 
 
 class ExcelInterface:
@@ -93,20 +93,18 @@ class ExcelInterface:
 def create_DB(db):
     ''' Read Excel File and recreate the Database '''
     excel_interface = ExcelInterface(db)
-    relationships = excel_interface.read_excel('automapping.xls')
+    relationships = excel_interface.read_excel('htmlExtraction/automapping.xls')
     excel_interface.create_relationship_db(relationships)    
     
 def KeywordParseMain():
-    db_filename = os.path.join(sys.path[0], 'keywords.db')
-    schema_filename = os.path.join(sys.path[0], 'keywords_schema.sql')
-    print db_filename
-    print schema_filename    
-    db = DB.DB(db_filename, schema_filename)
+    db_filename = 'sqlite_dbs/keywords.db'
+    schema_filename = 'sqlite_dbs/keywords_schema.sql'
+    db = DB(db_filename, schema_filename)
 
     if (db.is_DB_new()):
         create_DB(db)
     
-    dbModel = DB.DBModel(db)
+    dbModel = DBModel(db)
     # db_explore.find_keyword_db('Portal')
     kwrd_list = dbModel.keyword_list()
     
@@ -115,7 +113,7 @@ def KeywordParseMain():
     
     kwrd_list = [k for k in kwrd_list if k.strip() != ""]
     
-    ss = StatisticsParser('test.html', dbModel)
+    ss = StatisticsParser('htmlExtraction/test.html', dbModel)
     ss.accumulate_text_from_tags()
     page_stats = ss.search_for_keywords(kwrd_list)
     print page_stats  

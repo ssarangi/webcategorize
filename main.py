@@ -1,12 +1,7 @@
 import sys
-sys.path.insert(0, 'DB')
-sys.path.insert(0, 'globals')
-sys.path.insert(0, 'htmlExtraction')
-sys.path.insert(0, 'crawler')
-
-from imports import *
-import crawler
-import KeywordParse
+from globals.global_imports import *
+from htmlExtraction import KeywordParse
+from crawler.crawler import *
 
 __version__ = "0.1"
 USAGE = "%prog [options] <url>"
