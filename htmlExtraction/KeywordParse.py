@@ -3,18 +3,24 @@ from Utils import *
 import DB
 from StatisticsParser import *
 from KeywordRelationship import *
+from imports import *
 
 
 class ExcelInterface:
+    ''' Excel Interface - Class to read an excel file and generate the keyword DB '''
     def __init__(self, db):
         self.relationships = [] 
         self.db = db
         
-    def _insert(self, table_name, column_name, data_set):
-        ''' Use this function to insert multiple inserts into DB '''
-        if (len(data_set) > 0):
-            for d in data_set:
-                self.db.insert(table_name, [column_name], [d])
+    def __insert(self, tableName, columnName, dataSet):
+        ''' Use this function to insert multiple inserts into DB
+            tableName: String: DB Table name
+            columnName: String: DB Column in DB Table
+            dataSet: List: 
+        '''
+        if (len(dataSet) > 0):
+            for d in dataSet:
+                self.db.insert(tableName, [columnName], [d])
     
     def read_excel(self, filename):
         ''' sl are service lines '''
@@ -90,9 +96,11 @@ def create_DB(db):
     relationships = excel_interface.read_excel('automapping.xls')
     excel_interface.create_relationship_db(relationships)    
     
-if __name__ == "__main__":
-    db_filename = 'keywords.db'
-    schema_filename = 'keywords_schema.sql'    
+def KeywordParseMain():
+    db_filename = os.path.join(sys.path[0], 'keywords.db')
+    schema_filename = os.path.join(sys.path[0], 'keywords_schema.sql')
+    print db_filename
+    print schema_filename    
     db = DB.DB(db_filename, schema_filename)
 
     if (db.is_DB_new()):

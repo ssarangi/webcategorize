@@ -1,11 +1,17 @@
-import optparse
 import sys
-from string import *
-from crawler.crawler import *
+sys.path.insert(0, 'DB')
+sys.path.insert(0, 'globals')
+sys.path.insert(0, 'htmlExtraction')
+sys.path.insert(0, 'crawler')
+
+from imports import *
+import crawler
+import KeywordParse
 
 __version__ = "0.1"
 USAGE = "%prog [options] <url>"
 VERSION = "%prog v" + __version__
+LOG_LEVEL  = logging.INFO
 
 def getLinks(url):
     page = Fetcher(url)
@@ -64,6 +70,7 @@ def parse_options():
 
     # Check the URL first
     url = args[0]
+    print url
 
     if (len(url) > 8):
         index_http = find(url, "http://", 0, 7)
@@ -76,6 +83,9 @@ def parse_options():
 
 def main():    
     opts, url, args = parse_options()
+
+    # Test the keyword parsing
+    KeywordParse.KeywordParseMain()
 
     if opts.links:
         getLinks(url)
@@ -108,3 +118,6 @@ def main():
     print >> sys.stderr, "Followed: %d" % crawler.num_followed
     print >> sys.stderr, "Stats:    (%d/s after %0.2fs)" % (
             int(math.ceil(float(crawler.num_links) / tTime)), tTime)
+
+if __name__ == "__main__":
+    main()
