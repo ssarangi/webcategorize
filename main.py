@@ -2,6 +2,7 @@ import sys
 from globals.global_imports import *
 from htmlExtraction import KeywordParse
 from crawler.crawler import *
+from DataParsing.KeywordExtraction import *
 
 __version__ = "0.1"
 USAGE = "%prog [options] <url>"
@@ -51,7 +52,8 @@ def parse_options():
     parser.add_option("-D", "--dot", action="store_true", default=False,
                       dest="out_dot", help="Output Graphviz dot file")
     
-
+    parser.add_option("-K", "--keyword_parse", action="store_true", default=False,
+                      dest="keyword_parse", help="Parse Keywords from Excel")
 
     opts, args = parser.parse_args()
 
@@ -85,6 +87,9 @@ def main():
     if opts.links:
         getLinks(url)
         raise SystemExit, 0
+
+    if opts.keyword_parse:
+        createKeywordDB()
 
     depth_limit = opts.depth_limit
     confine_prefix=opts.confine
