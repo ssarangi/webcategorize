@@ -3,6 +3,7 @@ from globals.global_imports import *
 from htmlExtraction import KeywordParse
 from crawler.crawler import *
 from DataParsing.KeywordExtraction import *
+from DataParsing.URLParsing import *
 
 __version__ = "0.1"
 USAGE = "%prog [options] <url>"
@@ -46,7 +47,7 @@ def parse_options():
     parser.add_option("-L", "--show-links", action="store_true", default=False,
                       dest="out_links", help="Output links found")
 
-    parser.add_option("-u", "--show-urls", action="store_true", default=False,
+    parser.add_option("-s", "--show-urls", action="store_true", default=False,
                       dest="out_urls", help="Output URLs found")
 
     parser.add_option("-D", "--dot", action="store_true", default=False,
@@ -54,6 +55,9 @@ def parse_options():
     
     parser.add_option("-K", "--keyword_parse", action="store_true", default=False,
                       dest="keyword_parse", help="Parse Keywords from Excel")
+
+    parser.add_option("-U", "--url_parse", action="store_true", default=False,
+                      dest="url_parse", help="Parse URL's from Excel")
 
     opts, args = parser.parse_args()
 
@@ -82,7 +86,7 @@ def main():
     opts, url, args = parse_options()
 
     # Test the keyword parsing
-    KeywordParse.KeywordParseMain()
+    # KeywordParse.KeywordParseMain()
 
     if opts.links:
         getLinks(url)
@@ -90,6 +94,11 @@ def main():
 
     if opts.keyword_parse:
         createKeywordDB()
+        exit()
+        
+    if opts.url_parse:
+        createUrlDB()
+        exit()
 
     depth_limit = opts.depth_limit
     confine_prefix=opts.confine
@@ -118,6 +127,10 @@ def main():
     print >> sys.stderr, "Followed: %d" % crawler.num_followed
     print >> sys.stderr, "Stats:    (%d/s after %0.2fs)" % (
             int(math.ceil(float(crawler.num_links) / tTime)), tTime)
+
+    for k,v in crawler.url_content.items():
+        print "Url: %s\n" % k
+        
 
 if __name__ == "__main__":
     main()

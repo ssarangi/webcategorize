@@ -2,7 +2,7 @@ from xlrd import open_workbook
 from globals.Utils import *
 from DB.DBInterface import *
 
-class ExcelInterface:
+class KeywordExcelInterface:
     ''' Excel Interface - Class to read an excel file and generate the keyword DB '''
     def __init__(self, db):
         self.relationships = [] 
@@ -89,7 +89,7 @@ def createKeywordDB():
     db_filename = 'sqlite_dbs/keywords.db'
     schema_filename = 'sqlite_dbs/keywords_schema.sql'
     db = DB(db_filename, schema_filename)
-    excel_interface = ExcelInterface(db)
+    excel_interface = KeywordExcelInterface(db)
     relationships = excel_interface.read_excel('DataParsing/automapping.xls')
     excel_interface.create_relationship_db(relationships)
     
