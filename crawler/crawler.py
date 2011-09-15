@@ -167,6 +167,7 @@ class Crawler(object):
                 try:
                     self.visited_links.add(this_url)
                     self.num_followed += 1
+                    print "Following Link: %s" % this_url
                     page = Fetcher(this_url)
                     page.fetch()
                     for link_url in [self._pre_visit_url_condense(l) for l in page.out_links()]:
@@ -182,7 +183,7 @@ class Crawler(object):
                                 if link not in self.links_remembered:
                                     self.links_remembered.add(link)
                 except Exception, e:
-                    print >>sys.stderr, "ERROR: Can't process url '%s' (%s)" % (this_url, e)
+                    print >>sys.stderr, "ERROR: Can't process url '%s' (%s)" % (e, e)
                     #print format_exc()
 
 class OpaqueDataException (Exception):
@@ -199,6 +200,7 @@ class Fetcher(object):
     def __init__(self, url):
         self.url = url
         self.out_urls = []
+        self.encoding = ""
 
     def __getitem__(self, x):
         return self.out_urls[x]
@@ -232,6 +234,7 @@ class Fetcher(object):
                 content = unicode(data.read(), "utf-8",
                         errors="replace")
                 soup = BeautifulSoup(content)
+                self.encoding = "utf-8"
                 tags = soup('a')
             except urllib2.HTTPError, error:
                 if error.code == 404:
@@ -248,9 +251,9 @@ class Fetcher(object):
             for tag in tags:
                 href = tag.get("href")
                 if href is not None:
-                    url = urlparse.urljoin(self.url, escape(href))
+                    url = urlparse.urljoin(self.url.encode(self.encoding), escape(href))
                     if url not in self:
-                        self.out_urls.append(url)
+                        self.out_urls.append(url.encode(self.encoding))
 
 
 class DotWriter:

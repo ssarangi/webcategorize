@@ -85,17 +85,13 @@ def parse_options():
     return opts, args
 
 def main():    
-    opts, url, args = parse_options()
+    opts, args = parse_options()
     urlDB = getUrlDB()
     urlInterface = UrlInterface(urlDB)
     companies = urlInterface.uncrawledCompanies()
     
     # Test the keyword parsing
     # KeywordParse.KeywordParseMain()
-
-    if opts.links:
-        getLinks(url)
-        raise SystemExit, 0
 
     if opts.keyword_parse:
         createKeywordDB()
@@ -111,9 +107,13 @@ def main():
 
     sTime = time.time()
 
-    print >> sys.stderr,  "Crawling %s (Max Depth: %d)" % (url, depth_limit)
-    crawler = Crawler(url, depth_limit, confine_prefix, exclude)
-    crawler.crawl()
+    for company in companies:
+        if opts.links:
+            getLinks(company.base_url)
+            raise SystemExit, 0
+        print >> sys.stderr,  "Crawling %s (Max Depth: %d)" % (company.base_url, depth_limit)
+        crawler = Crawler(company.base_url, depth_limit, confine_prefix, exclude)
+        crawler.crawl()
 
     if opts.out_urls:
         print "\n".join(crawler.urls_seen)
