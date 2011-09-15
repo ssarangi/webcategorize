@@ -13,8 +13,8 @@ class Company:
         self.url_list.append(url)
         
 class URL:
-    def __init__(self, id=0, address="", content="", analyzed=""):
-        self.id = id
+    def __init__(self, u_id=0, address="", content="", analyzed=""):
+        self.id = u_id
         self.address = address
         self.content = content
         self.analyzed = analyzed
@@ -28,11 +28,11 @@ class UrlInterface:
         
         
     def uncrawledCompanies(self):
-        result = self.db.query("Company", ["id", "name", "base_url", "crawled"], "crawled", 1)
+        result = self.db.query("Company", ["name", "base_url", "crawled"], "crawled", 0, all_values=True)
         
         companies = []
         for r in result:
-            c = Company(r.id, r.name, r.base_url, r.crawled)
+            c = Company(r[0], r[1], r[2], r[3])
             companies.append(c)
             
         return companies

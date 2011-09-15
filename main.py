@@ -16,6 +16,17 @@ def getLinks(url):
     page.fetch()
     for i, url in enumerate(page):
         print "%d. %s" % (i, url)
+        
+def correctURL(url):
+    ''' url: String '''
+    if (len(url) > 8):
+        index_http = find(url, "http://", 0, 7)
+        index_https = find(url, "http://", 0, 8)
+
+        if (index_http == -1 and index_https == -1):
+            url = "http://" + url
+            
+        return url            
 
 def parse_options():
     """parse_options() -> opts, args
@@ -62,30 +73,23 @@ def parse_options():
 
     opts, args = parser.parse_args()
 
-    if len(args) < 1:
-        parser.print_help(sys.stderr)
-        raise SystemExit, 1
+    # Currently, we don't need any arguments
+#    if len(args) < 1:
+#        parser.print_help(sys.stderr)
+#        raise SystemExit, 1
 
     if opts.out_links and opts.out_urls:
         parser.print_help(sys.stderr)
         parser.error("options -L and -u are mutually exclusive")
 
-    # Check the URL first
-    url = args[0]
-    print url
-
-    if (len(url) > 8):
-        index_http = find(url, "http://", 0, 7)
-        index_https = find(url, "http://", 0, 8)
-
-        if (index_http == -1 and index_https == -1):
-            url = "http://" + url
-
-    return opts, url, args
+    return opts, args
 
 def main():    
     opts, url, args = parse_options()
-    urlInterface = URLInterface()
+    urlDB = getUrlDB()
+    urlInterface = UrlInterface(urlDB)
+    companies = urlInterface.uncrawledCompanies()
+    
     # Test the keyword parsing
     # KeywordParse.KeywordParseMain()
 
