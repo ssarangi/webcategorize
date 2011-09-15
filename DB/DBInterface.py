@@ -40,6 +40,17 @@ class DB:
         self.cursor.execute(sql_query)
         
         return self.cursor.fetchall()
+    
+    def update(self, table_name, column, value, searchColumn, searchValue):
+        ''' Update a single column with a value
+            column: column to update
+            value: Value to be updated
+            searchColumn: Find record with this column
+            searchValue: Value of search column
+        '''
+        sql_query = "update %s set %s=%s where %s=%s" % (table_name, column, str(value), searchColumn, searchValue)
+        self.conn.execute(sql_query)
+        self.conn.commit()
             
     def insert(self, table_name, column_list, data_list):
         ''' Both column_list & data_list are expected to be list of strings '''

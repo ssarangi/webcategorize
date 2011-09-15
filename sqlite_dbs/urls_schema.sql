@@ -1,11 +1,15 @@
 create table Company (
     id INTEGER PRIMARY KEY autoincrement not null,
     name TEXT NOT NULL,
-    base_url TEXT NOT NULL
+    base_url TEXT NOT NULL,
+	crawled INTEGER DEFAULT 0
 );
 
 create table URL (
     id INTEGER PRIMARY KEY autoincrement not null,
     address TEXT NOT NULL UNIQUE,
-    content BLOB NOT NULL
+    content BLOB NOT NULL,
+	analyzed INTEGER DEFAULT 0
+	company_index INTEGER,
+	FOREIGN KEY(company_index) REFERENCES Company(id)
 );

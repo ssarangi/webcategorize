@@ -1,6 +1,6 @@
 import sys
 from globals.global_imports import *
-from htmlExtraction import KeywordParse
+from htmlExtraction.KeywordParse import *
 from crawler.crawler import *
 from DataParsing.KeywordExtraction import *
 from DataParsing.URLParsing import *
