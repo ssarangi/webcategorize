@@ -6,10 +6,7 @@ from globals.global_imports import *
 
     
 def KeywordParseMain():
-    db_filename = 'sqlite_dbs/keywords.db'
-    schema_filename = 'sqlite_dbs/keywords_schema.sql'
-    db = DB(db_filename, schema_filename)
-
+    db = getKeywordDB()
     # Assume that the DB is already created
     #if (db.is_DB_new()):
     #    create_DB(db)

@@ -1,5 +1,6 @@
-from xlrd import open_workbook
+from xlrd import *
 from globals.Utils import *
+from global.global_imports import *
 from DB.DBInterface import *
 
 class URLExcelInterface:
@@ -52,9 +53,7 @@ class URLExcelInterface:
     
 def createUrlDB():
     ''' Read Excel File and recreate the Database '''
-    db_filename = 'sqlite_dbs/urls.db'
-    schema_filename = 'sqlite_dbs/urls_schema.sql'
-    db = DB(db_filename, schema_filename)
+    urlDB = getUrlDB()
     excel_interface = URLExcelInterface(db)
     relationships = excel_interface.read_excel('DataParsing/URLs.xls')
     # excel_interface.create_relationship_db(relationships)

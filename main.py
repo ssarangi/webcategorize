@@ -4,6 +4,7 @@ from htmlExtraction.KeywordParse import *
 from crawler.crawler import *
 from DataParsing.KeywordExtraction import *
 from DataParsing.URLParsing import *
+from DB.UrlInterface import *
 
 __version__ = "0.1"
 USAGE = "%prog [options] <url>"
@@ -84,7 +85,7 @@ def parse_options():
 
 def main():    
     opts, url, args = parse_options()
-
+    urlInterface = URLInterface()
     # Test the keyword parsing
     # KeywordParse.KeywordParseMain()
 
