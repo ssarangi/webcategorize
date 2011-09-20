@@ -1,23 +1,24 @@
 from DBInterface import *
+from alchemy import *
 
-class Company:
-    def __init__(self, id=-1, name="", base_url="", crawled=0):
-        self.id = id
-        self.name = name
-        self.base_url = base_url
-        self.crawled = crawled
-        self.url_list = []
-        
-    def addUrl(self, url):
-        ''' url: URL Object '''
-        self.url_list.append(url)
-        
-class URL:
-    def __init__(self, u_id=0, address="", content="", analyzed=""):
-        self.id = u_id
-        self.address = address
-        self.content = content
-        self.analyzed = analyzed
+#class Company:
+#    def __init__(self, id=-1, name="", base_url="", crawled=0):
+#        self.id = id
+#        self.name = name
+#        self.base_url = base_url
+#        self.crawled = crawled
+#        self.url_list = []
+#        
+#    def addUrl(self, url):
+#        ''' url: URL Object '''
+#        self.url_list.append(url)
+#        
+#class URL:
+#    def __init__(self, u_id=0, address="", content="", analyzed=""):
+#        self.id = u_id
+#        self.address = address
+#        self.content = content
+#        self.analyzed = analyzed
 
 class UrlInterface:
     def __init__(self, db):
@@ -28,13 +29,9 @@ class UrlInterface:
         
         
     def uncrawledCompanies(self):
-        result = self.db.query("Company", ["name", "base_url", "crawled"], "crawled", 0, all_values=True)
-        
-        companies = []
-        for r in result:
-            c = Company(r[0], r[1], r[2], r[3])
-            companies.append(c)
-            
+        # result = self.db.query("Company", ["name", "base_url", "crawled"], "crawled", 0, all_values=True)
+        session = self.db.session
+        companies = session.query(Company).filter(Company.crawled == 0)
         return companies
     
     def urlAnalyzed(self, url):

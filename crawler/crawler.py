@@ -22,8 +22,9 @@ from string import *
 from cgi import escape
 from traceback import format_exc
 from Queue import Queue, Empty as QueueEmpty
-
 from BeautifulSoup import BeautifulSoup
+from globals.global_imports import *
+from DB.alchemy import *
 
 __version__ = "0.1"
 __copyright__ = "CopyRight (C) 2008-2011 by Satyajit Sarangi. Originally by James Miller (https://github.com/ewa/python-webcrawler/blob/master/crawler.py)"
@@ -53,9 +54,11 @@ class Link (object):
 
 class Crawler(object):
 
-    def __init__(self, root, depth_limit, confine=None, exclude=[], locked=True, filter_seen=True):
-        self.root = root
-        self.host = urlparse.urlparse(root)[1]
+    def __init__(self, company, depth_limit, confine=None, exclude=[], locked=True, filter_seen=True):
+        self.company = company
+        self.root = company.base_url
+        self.host = urlparse.urlparse(self.root)[1]
+        self.urlDB = getUrlDB()
 
         ## Data for filters:
         self.depth_limit = depth_limit # Max depth (number of hops from root)
@@ -170,6 +173,14 @@ class Crawler(object):
                     print "Following Link: %s" % this_url
                     page = Fetcher(this_url)
                     page.fetch()
+                    content = page.content
+                    # URL
+                    url = URL(this_url, content, 0, self.company.id)
+                    # Now we have the url and the content. Add it to the DB
+                    self.company.urls.append(url)
+                    # self.urlDB.insert("URL", ["address", "company_index"], [this_url, str(self.companyID)])
+                    # self.urlDB.update("URL", "content", content, "address", this_url, BLOB=True)
+                    
                     for link_url in [self._pre_visit_url_condense(l) for l in page.out_links()]:
                         if link_url not in self.urls_seen:
                             q.put((link_url, depth+1))
@@ -183,7 +194,8 @@ class Crawler(object):
                                 if link not in self.links_remembered:
                                     self.links_remembered.add(link)
                 except Exception, e:
-                    print >>sys.stderr, "ERROR: Can't process url '%s' (%s)" % (e, e)
+                    print >>sys.stderr, "ERROR: %s" % (e)
+                    exit()
                     #print format_exc()
 
 class OpaqueDataException (Exception):
@@ -201,6 +213,7 @@ class Fetcher(object):
         self.url = url
         self.out_urls = []
         self.encoding = ""
+        self.content = ""
 
     def __getitem__(self, x):
         return self.out_urls[x]
@@ -231,9 +244,9 @@ class Fetcher(object):
                 if mime_type != "text/html":
                     raise OpaqueDataException("Not interested in files of type %s" % mime_type,
                                               mime_type, url)
-                content = unicode(data.read(), "utf-8",
-                        errors="replace")
-                soup = BeautifulSoup(content)
+                self.content = unicode(data.read(), "utf-8",
+                                       errors="replace")
+                soup = BeautifulSoup(self.content)
                 self.encoding = "utf-8"
                 tags = soup('a')
             except urllib2.HTTPError, error:

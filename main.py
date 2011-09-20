@@ -5,6 +5,7 @@ from crawler.crawler import *
 from DataParsing.KeywordExtraction import *
 from DataParsing.URLParsing import *
 from DB.UrlInterface import *
+from DB.alchemy import *
 
 __version__ = "0.1"
 USAGE = "%prog [options] <url>"
@@ -84,14 +85,14 @@ def parse_options():
 
     return opts, args
 
+def showDB(db, className):
+    print "Showing DB: %s" % className
+    objs = db.session.query(className).all()
+    for obj in objs:
+        print obj
+    
 def main():    
     opts, args = parse_options()
-    urlDB = getUrlDB()
-    urlInterface = UrlInterface(urlDB)
-    companies = urlInterface.uncrawledCompanies()
-    
-    # Test the keyword parsing
-    # KeywordParse.KeywordParseMain()
 
     if opts.keyword_parse:
         createKeywordDB()
@@ -101,18 +102,29 @@ def main():
         createUrlDB()
         exit()
 
+
+    showDB(getUrlDB(), URL)
+    exit()
+    
+    urlDB = getUrlDB()
+    urlInterface = UrlInterface(urlDB)
+    companies = urlInterface.uncrawledCompanies()
+    
+    # Test the keyword parsing
+    # KeywordParse.KeywordParseMain()
+
     depth_limit = opts.depth_limit
     confine_prefix=opts.confine
     exclude=opts.exclude
 
     sTime = time.time()
-
+        
     for company in companies:
         if opts.links:
             getLinks(company.base_url)
             raise SystemExit, 0
         print >> sys.stderr,  "Crawling %s (Max Depth: %d)" % (company.base_url, depth_limit)
-        crawler = Crawler(company.base_url, depth_limit, confine_prefix, exclude)
+        crawler = Crawler(company, depth_limit, confine_prefix, exclude)
         crawler.crawl()
 
     if opts.out_urls:

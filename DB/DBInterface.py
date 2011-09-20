@@ -20,9 +20,7 @@ class DB:
     def query(self, table, query_list, column, value, all_values=False, show_query=False):
         q_str = ','.join(query_list)
         
-        sql_query = """
-          select id, %s from %s where %s='%s'
-        """ % (q_str, table, column, value)
+        sql_query = "select id, %s from %s where %s='%s'" % (q_str, table, column, value)
         
         if (show_query == True):
             print sql_query
@@ -36,20 +34,26 @@ class DB:
         
     def query_all(self, table):
         ''' Return all the elements from the table '''
-        sql_query = """select * from %s""" % (table)
+        sql_query = "select * from %s" % (table)
         self.cursor.execute(sql_query)
         
         return self.cursor.fetchall()
     
-    def update(self, table_name, column, value, searchColumn, searchValue):
+    def update(self, table_name, column, value, searchColumn, searchValue, BLOB=False):
         ''' Update a single column with a value
             column: column to update
             value: Value to be updated
             searchColumn: Find record with this column
             searchValue: Value of search column
         '''
-        sql_query = "update %s set %s=%s where %s=%s" % (table_name, column, str(value), searchColumn, searchValue)
-        self.conn.execute(sql_query)
+        if (BLOB == False):
+            sql_query = "update %s set %s = ? where %s = '%s';" % (table_name, column, value, searchColumn, searchValue)
+            self.conn.execute(sql_query)
+        else:
+            sql_query = "update %s set %s = ? where %s = '%s';" % (table_name, column, searchColumn, searchValue)
+            print sql_query
+            self.conn.execute(sql_query, (sqlite3.Binary(value),))
+        
         self.conn.commit()
             
     def insert(self, table_name, column_list, data_list):
@@ -59,7 +63,7 @@ class DB:
         data_list = StringUtils.add_quotes(data_list)
         data_str = ','.join(data_list)
         
-        sql_query = """insert into %s (%s) values(%s)""" % (table_name, col_str, data_str)
+        sql_query = "insert into %s (%s) values(%s)" % (table_name, col_str, data_str)
         self.conn.execute(sql_query)
         self.conn.commit()
         
@@ -70,7 +74,7 @@ class DB:
         for item in data_list:
             tuple_list.append((item,))        
                     
-        sql_query = """insert into %s (%s) values (?)""" % (table_name, column_name)
+        sql_query = "insert into %s (%s) values (?)" % (table_name, column_name)
         self.cursor.executemany(sql_query, tuple_list)
         self.conn.commit()
         

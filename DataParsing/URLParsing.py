@@ -2,6 +2,7 @@ from xlrd import *
 from globals.Utils import *
 from globals.global_imports import *
 from DB.DBInterface import *
+from DB.alchemy import *
 
 class URLExcelInterface:
     ''' Excel Interface - Class to read an excel file and generate the keyword DB '''
@@ -43,19 +44,21 @@ class URLExcelInterface:
             if (url_list[i].strip() != ""):
                 self.final_company_list.append(company_list[i])
                 self.final_url_list.append(url_list[i])
-                db_list.append([company_list[i], url_list[i]])        
-                
-        print len(self.final_company_list), len(set(self.final_company_list))
-        print len(self.final_url_list), len(set(self.final_url_list))
-                
-        self.db.insert_many_list('Company', ['name', 'base_url'], db_list)
+                c = Company(company_list[i], url_list[i])
+                db_list.append(c)
+        
+        self.db.addAll(db_list)        
+        self.db.commit()
+        # self.db.insert_many_list('Company', ['name', 'base_url'], db_list)
         
     
 def createUrlDB():
     ''' Read Excel File and recreate the Database '''
+    print "Recreating the URL database"
     urlDB = getUrlDB()
-    excel_interface = URLExcelInterface(db)
-    relationships = excel_interface.read_excel('DataParsing/URLs.xls')
+    urlDB.createTable()
+    excel_interface = URLExcelInterface(urlDB)
+    excel_interface.read_excel('DataParsing/URLs.xls')
     # excel_interface.create_relationship_db(relationships)
     
 if __name__ == "__main__":
