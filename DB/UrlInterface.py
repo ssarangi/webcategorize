@@ -31,7 +31,8 @@ class UrlInterface:
     def uncrawledCompanies(self):
         # result = self.db.query("Company", ["name", "base_url", "crawled"], "crawled", 0, all_values=True)
         session = self.db.session
-        companies = session.query(Company).filter(Company.crawled == 0)
+        sql_query = session.query(Company).filter(Company.crawled == 0).order_by(Company.id)
+        companies = sql_query.all()
         return companies
     
     def urlAnalyzed(self, url):

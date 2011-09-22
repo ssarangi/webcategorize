@@ -177,7 +177,11 @@ class Crawler(object):
                     # URL
                     url = URL(this_url, content, 0, self.company.id)
                     # Now we have the url and the content. Add it to the DB
-                    self.company.urls.append(url)
+                    # self.company.urls.append(url)
+                    self.urlDB.addObject(url)
+                    self.urlDB.session.commit()
+                    print self.company.urls
+                    raw_input()
                     # self.urlDB.insert("URL", ["address", "company_index"], [this_url, str(self.companyID)])
                     # self.urlDB.update("URL", "content", content, "address", this_url, BLOB=True)
                     

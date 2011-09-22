@@ -7,9 +7,9 @@ create table Company (
 
 create table URL (
     id INTEGER PRIMARY KEY autoincrement not null,
-    address TEXT NOT NULL UNIQUE,
-    content BLOB NOT NULL,
-	analyzed INTEGER DEFAULT 0
+    address TEXT NOT NULL,
+    content TEXT,
+	analyzed INTEGER DEFAULT 0,
 	company_index INTEGER,
 	FOREIGN KEY(company_index) REFERENCES Company(id)
 );

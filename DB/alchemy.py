@@ -35,7 +35,7 @@ class ServiceLine1(Base):
     keyword = Column(String, unique=True)
     
     def __repr__(self):
-        return  "<Service Line 1: ('%s','%s')>" % (str(self.id), self.keyword)
+        return  "<Service Line 1: (%i,'%s')>" % (self.id, self.keyword)
     
 class ServiceLine2(Base):
     __tablename__ = 'service_line_2'
@@ -44,7 +44,7 @@ class ServiceLine2(Base):
     keyword = Column(String, unique=True)
 
     def __repr__(self):
-        return  "<Service Line 2: ('%s','%s')>" % (str(self.id), self.keyword)
+        return  "<Service Line 2: (%i,'%s')>" % (self.id, self.keyword)
 
 class ServiceLine3(Base):
     __tablename__ = 'service_line_3'
@@ -53,7 +53,7 @@ class ServiceLine3(Base):
     keyword = Column(String, unique=True)
 
     def __repr__(self):
-        return  "<Service Line 3: ('%s','%s')>" % (str(self.id), self.keyword)
+        return  "<Service Line 3: (%i,'%s')>" % (self.id, self.keyword)
 
 class KeywordTable(Base):
     __tablename__ = 'keyword_table'    
@@ -62,7 +62,7 @@ class KeywordTable(Base):
     keyword = Column(String, unique=True)
 
     def __repr__(self):
-        return  "<Keyword Table: ('%s','%s')>" % (str(self.id), self.keyword)
+        return  "<Keyword Table: (%i,'%s')>" % (self.id, self.keyword)
     
 class Relationship(Base):
     __tablename__ = 'relationship'
@@ -74,8 +74,8 @@ class Relationship(Base):
     keyword_index = Column(Integer, ForeignKey('keyword_table.id'))
     
     def __repr__(self):
-        return  "<Relationship: ('%s','%s','%s','%s','%s')>" % (str(self.id), str(self.sl1_index), str(self.sl2_index),
-                                                                str(self.sl3_index), str(self.keyword_index))
+        return  "<Relationship: (%i, %i, %i, %i, %i)>" % (self.id, self.sl1_index, self.sl2_index,
+                                                          self.sl3_index, self.keyword_index)
     
     
 class Company(Base):
@@ -86,16 +86,14 @@ class Company(Base):
     base_url = Column(String, nullable=False)
     crawled = Column(Integer, default=0)
     
-    urls = relationship("URL")    
-
     def __init__(self, name, base_url, crawled=0):
         self.name = name
         self.base_url = base_url
         self.crawled = crawled
 
     def __repr__(self):
-        return  "<Company: ('%s','%s','%s','%s')>" % (str(self.id), self.name, self.base_url,
-                                                      str(self.crawled))
+        return  "<Company: (%i,'%s','%s',%i)>" % (self.id, self.name, self.base_url,
+                                                    self.crawled)
     
     
 class URL(Base):
@@ -107,7 +105,7 @@ class URL(Base):
     analyzed = Column(Integer, default=0)
     company_index = Column(Integer, ForeignKey('Company.id'))
 
-    company = relationship("Company", backref=backref('URL', order_by=id))
+    company = relationship("Company", backref=backref('urls', order_by=id))
     
     def __init__(self, address, content, analyzed, company_index):
         self.address = address
@@ -116,5 +114,35 @@ class URL(Base):
         self.company_index = company_index
 
     def __repr__(self):
-        return  "<Relationship: ('%s','%s','%s','%s','%s')>" % (str(self.id), self.address, self.content,
-                                                                str(self.company_index))
+        return  "<Relationship: (%i,'%s','%s','%i','%i')>" % (self.id, self.address, self.content,
+                                                              self.analyzed, self.company_index)
+
+class TagStats(Base):
+    __tablename__ = 'TagStats'
+    
+    id = Column(Integer, primary_key=True)
+    tag = Column(String, nullable=False, unique=True)
+    
+    url = relationship("URL", backref=backref('tags', order_by=id))
+    
+    def __init__(self, tag):
+        pass
+    
+    def __repr__(self):
+        return "<Tag: (%i, %s)>" % (self.id, self.tag)
+    
+def KeywordStats(Base):
+    __tablename__ = 'KeywordStats'
+    
+    id = Column(Integer, primary_key=True)
+    keyword = Column(String, nullable=False)
+    count = Column(Integer, nullable=False, default=0)
+    
+    tag = relationship("TagStats", backref=backref('keywords', order_by=count))
+    
+    def __init__(self, keyword, count):
+        self.keyword = keyword
+        self.count = count
+        
+    def __repr__(self):
+        return "<Keyword: (%i, %s, %i)>" % (self.id, self.keyword, self.count)

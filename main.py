@@ -103,8 +103,8 @@ def main():
         exit()
 
 
-    showDB(getUrlDB(), URL)
-    exit()
+    showDB(getUrlDB(), Company)
+    # exit()
     
     urlDB = getUrlDB()
     urlInterface = UrlInterface(urlDB)
@@ -119,13 +119,16 @@ def main():
 
     sTime = time.time()
         
-    for company in companies:
+    for i in range(0, len(companies)):
         if opts.links:
-            getLinks(company.base_url)
+            getLinks(companies[i].base_url)
             raise SystemExit, 0
-        print >> sys.stderr,  "Crawling %s (Max Depth: %d)" % (company.base_url, depth_limit)
-        crawler = Crawler(company, depth_limit, confine_prefix, exclude)
+        print >> sys.stderr,  "Crawling %s (Max Depth: %d)" % (companies[i].base_url, depth_limit)
+        crawler = Crawler(companies[i], depth_limit, confine_prefix, exclude)
         crawler.crawl()
+        
+
+    showDB(getUrlDB(), URL)
 
     if opts.out_urls:
         print "\n".join(crawler.urls_seen)
