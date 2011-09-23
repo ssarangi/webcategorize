@@ -5,7 +5,7 @@ from KeywordRelationship import *
 from globals.global_imports import *
 
     
-def KeywordParseMain():
+def GenerateStatisticsMain():
     db = getKeywordDB()
     # Assume that the DB is already created
     #if (db.is_DB_new()):
