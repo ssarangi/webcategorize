@@ -122,8 +122,9 @@ class TagStats(Base):
     
     id = Column(Integer, primary_key=True)
     tag = Column(String, nullable=False, unique=True)
+    url_index = Column(Integer, ForeignKey('URL.id'))
     
-    url = relationship("URL", backref=backref('tags', order_by=id))
+    url = relationship("URL", backref=backref('tags'))
     
     def __init__(self, tag):
         pass

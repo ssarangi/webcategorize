@@ -6,17 +6,14 @@ from DataParsing.KeywordExtraction import *
 from DataParsing.URLParsing import *
 from DB.UrlInterface import *
 from DB.alchemy import *
+from PyQt4 import QtGui
+from globals.settings import settings
+import gui.MainWindow
 
 __version__ = "0.1"
 USAGE = "%prog [options] <url>"
 VERSION = "%prog v" + __version__
 LOG_LEVEL  = logging.INFO
-
-def getLinks(url):
-    page = Fetcher(url)
-    page.fetch()
-    for i, url in enumerate(page):
-        print "%d. %s" % (i, url)
         
 def correctURL(url):
     ''' url: String '''
@@ -93,7 +90,13 @@ def showDB(db, className):
     
 def main():    
     opts, args = parse_options()
+    settings.opts = opts
 
+    app = QtGui.QApplication(sys.argv)
+    
+    mainWindow = gui.MainWindow.MainWindow(settings.version())
+    mainWindow.show()
+    
     if opts.keyword_parse:
         createKeywordDB()
         exit()
@@ -102,55 +105,15 @@ def main():
         createUrlDB()
         exit()
 
-
-    showDB(getUrlDB(), Company)
+    # showDB(getUrlDB(), Company)
     # exit()
-    
-    urlDB = getUrlDB()
-    urlInterface = UrlInterface(urlDB)
-    companies = urlInterface.uncrawledCompanies()
-    
+        
     # Test the keyword parsing
     # KeywordParse.KeywordParseMain()
 
-    depth_limit = opts.depth_limit
-    confine_prefix=opts.confine
-    exclude=opts.exclude
-
-    sTime = time.time()
+    # showDB(getUrlDB(), URL)
         
-    for i in range(0, len(companies)):
-        if opts.links:
-            getLinks(companies[i].base_url)
-            raise SystemExit, 0
-        print >> sys.stderr,  "Crawling %s (Max Depth: %d)" % (companies[i].base_url, depth_limit)
-        crawler = Crawler(companies[i], depth_limit, confine_prefix, exclude)
-        crawler.crawl()
-        
-
-    showDB(getUrlDB(), URL)
-
-    if opts.out_urls:
-        print "\n".join(crawler.urls_seen)
-
-    if opts.out_links:
-        print "\n".join([str(l) for l in crawler.links_remembered])
-        
-    if opts.out_dot:
-        d = DotWriter()
-        d.asDot(crawler.links_remembered)
-
-    eTime = time.time()
-    tTime = eTime - sTime
-
-    print >> sys.stderr, "Found:    %d" % crawler.num_links
-    print >> sys.stderr, "Followed: %d" % crawler.num_followed
-    print >> sys.stderr, "Stats:    (%d/s after %0.2fs)" % (
-            int(math.ceil(float(crawler.num_links) / tTime)), tTime)
-
-    for k,v in crawler.url_content.items():
-        print "Url: %s\n" % k
-        
-
+    sys.exit(app.exec_())
+    
 if __name__ == "__main__":
     main()
