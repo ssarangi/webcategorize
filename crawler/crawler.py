@@ -6,8 +6,6 @@ This module implements a web crawler. This is very _basic_ only
 and needs to be extended to do anything useful with the
 traversed pages.
 
-From: http://code.activestate.com/recipes/576551-simple-web-crawler/
-
 """
 
 import re
@@ -18,6 +16,7 @@ import urllib2
 import urlparse
 import optparse
 import hashlib
+import socket
 from string import *
 from cgi import escape
 from traceback import format_exc
@@ -28,6 +27,7 @@ from globals.Logger import *
 from DB.alchemy import *
 from DB.UrlInterface import *
 from gui.Worker import *
+from django.conf.locale import te
 
 __version__ = "0.1"
 __copyright__ = "CopyRight (C) 2008-2011 by Satyajit Sarangi. Originally by James Miller (https://github.com/ewa/python-webcrawler/blob/master/crawler.py)"
@@ -63,26 +63,29 @@ class Link (object):
         return self.src + " -> " + self.dst
 
 class Crawler(object):
-    def __init__(self, QTableViewObj, company, depth_limit, confine=None, exclude=[], locked=True, filter_seen=True):
+    def __init__(self, crawlerTab, company, depth_limit, confine=None, exclude=[], locked=True, filter_seen=True):
         self.company = company
         self.root = company.base_url
         self.host = urlparse.urlparse(self.root)[1]
         self.urlDB = getUrlDB()
-        sqlite_handler = SQLiteHandler(getCrawlerLogDB())
-        table_handler = QTableViewHandler(QTableViewObj)
-        console_handler = ConsoleHandler()
-        
-        self.logger = logging.getLogger()
-        # logging.handlers.SQLiteHandler = sqlite_handler
-        # logging.handlers.QTableViewHandler = table_handler
-        
-        sqlite_handler.setLevel(logging.INFO)
-        table_handler.setLevel(logging.INFO)
-        console_handler.setLevel(logging.INFO)
-        
-        self.logger.addHandler(sqlite_handler)
-        self.logger.addHandler(table_handler)
-        self.logger.addHandler(console_handler)
+#        sqlite_handler = SQLiteHandler(getCrawlerLogDB())
+#        if (crawlerTab != None):
+#            table_handler = QTableViewHandler(crawlerTab.TableView)
+#            self.logger.addHandler(table_handler)            
+#            self.logger.addHandler(table_handler)        
+#        
+#        console_handler = ConsoleHandler()
+#        
+#        self.logger = logging.getLogger()
+#        # logging.handlers.SQLiteHandler = sqlite_handler
+#        # logging.handlers.QTableViewHandler = table_handler
+#        
+#        sqlite_handler.setLevel(logging.INFO)
+#        console_handler.setLevel(logging.INFO)
+#        
+#        self.logger.addHandler(sqlite_handler)
+#
+#        self.logger.addHandler(console_handler)
         
         ## Data for filters:
         self.depth_limit = depth_limit # Max depth (number of hops from root)
@@ -187,25 +190,24 @@ class Crawler(object):
             
             #Special-case depth 0 (starting URL)
             if depth == 0 and [] != do_not_follow:
-                self.logger.info("Whoops! Starting URL %s rejected by the following filters:" % (do_not_follow))
-
+                # self.logger.info("Whoops! Starting URL %s rejected by the following filters:" % (do_not_follow))
+                pass
+            
             #If no filters failed (that is, all passed), process URL
             if [] == do_not_follow:
                 try:
                     self.visited_links.add(this_url)
                     self.num_followed += 1
-                    self.logger.info("Following Link: %s" % this_url)
+                    # self.logger.info("Following Link: %s" % this_url)
+                    print "Following Link: %s" % this_url
                     page = Fetcher(this_url)
                     page.fetch()
                     content = page.content
                     # URL
                     url = URL(this_url, content, 0, self.company.id)
                     # Now we have the url and the content. Add it to the DB
-                    # self.company.urls.append(url)
-                    self.urlDB.addObject(url)
+                    self.urlDB.session.add(url)
                     self.urlDB.session.commit()
-                    # self.urlDB.insert("URL", ["address", "company_index"], [this_url, str(self.companyID)])
-                    # self.urlDB.update("URL", "content", content, "address", this_url, BLOB=True)
                     
                     for link_url in [self._pre_visit_url_condense(l) for l in page.out_links()]:
                         if link_url not in self.urls_seen:
@@ -221,9 +223,8 @@ class Crawler(object):
                                     self.links_remembered.add(link)
                 except Exception, e:
                     print >>sys.stderr, "ERROR: %s" % (e)
-                    exit()
-                    #print format_exc()
-
+                    self.urlDB.session.rollback()
+                                        
 class OpaqueDataException (Exception):
     def __init__(self, message, mimetype, url):
         Exception.__init__(self, message)
@@ -240,7 +241,8 @@ class Fetcher(object):
         self.out_urls = []
         self.encoding = ""
         self.content = ""
-
+        socket.setdefaulttimeout(2)
+        
     def __getitem__(self, x):
         return self.out_urls[x]
 
@@ -333,38 +335,33 @@ class DotWriter:
             print "\t" + self._safe_alias(l.src) + " -> " + self._safe_alias(l.dst) + ";"
         print  "}"
         
-        
-class CrawlerThread(WorkerThread):
-    def __init__(self, opts, crawlerTab):
-        WorkerThread.__init__(self, "Crawler Thread")
-        self.urlDB = getUrlDB()
-        self.urlInterface = UrlInterface(self.urlDB)
-        self.companies = self.urlInterface.uncrawledCompanies()
-        self.opts = opts
-        self.crawlerTab = crawlerTab
-        
-    def run(self):
-        depth_limit = self.opts.depth_limit
-        confine_prefix = self.opts.confine
-        exclude = self.opts.exclude
+def CrawlerMain(opts, crawlerTab=None):
+        urlDB = getUrlDB()
+        companies = UrlInterface.uncrawledCompanies(urlDB)
+
+        depth_limit = opts.depth_limit
+        confine_prefix = opts.confine
+        exclude = opts.exclude
     
         sTime = time.time()
     
-        for i in range(0, len(self.companies)):
-            if self.opts.links:
+        for i in range(0, len(companies)):
+            if opts.links:
                 getLinks(self.companies[i].base_url)
                 raise SystemExit, 0
-            print >> sys.stderr,  "Crawling %s (Max Depth: %d)" % (self.companies[i].base_url, depth_limit)
-            crawler = Crawler(self.crawlerTab.TableView, self.companies[i], depth_limit, confine_prefix, exclude)
+
+            print >> sys.stderr,  "Crawling %s (Max Depth: %d)" % (companies[i].base_url, depth_limit)
+            crawler = Crawler(crawlerTab, companies[i], depth_limit, confine_prefix, exclude)
             crawler.crawl()
+            UrlInterface.crawlingComplete(urlDB, companies[i])
             
-        if self.opts.out_urls:
+        if opts.out_urls:
             print "\n".join(crawler.urls_seen)
 
-        if self.opts.out_links:
+        if opts.out_links:
             print "\n".join([str(l) for l in crawler.links_remembered])
             
-        if self.opts.out_dot:
+        if opts.out_dot:
             d = DotWriter()
             d.asDot(crawler.links_remembered)
     
@@ -377,4 +374,14 @@ class CrawlerThread(WorkerThread):
                 int(math.ceil(float(crawler.num_links) / tTime)), tTime)
     
         for k,v in crawler.url_content.items():
-            print "Url: %s\n" % k
+            print "Url: %s\n" % k    
+        
+        
+class CrawlerThread(WorkerThread):
+    def __init__(self, opts, crawlerTab=None):
+        WorkerThread.__init__(self, "Crawler Thread")
+        self.opts = opts
+        
+    def run(self):
+        CrawlerMain(self.opts)
+        print "Waiting for more URL's to Crawl"

@@ -1,6 +1,8 @@
 from xlrd import open_workbook
+from globals.global_imports import *
 from globals.Utils import *
 from DB.DBInterface import *
+from DB.alchemy import *
 
 class KeywordExcelInterface:
     ''' Excel Interface - Class to read an excel file and generate the keyword DB '''
@@ -46,49 +48,100 @@ class KeywordExcelInterface:
             for k in klist:
                 serialized_col.append(k)
         
-        serialized_col = set(serialized_col)
+        serialized_col = filter(lambda x: x.strip() != "", serialized_col)
+        serialized_colSet = set(serialized_col)
+
+        # Now create the DB objects
+        serviceLine1_List = [ServiceLine1(sl1) for sl1 in sl1_set]
+        self.db.session.add_all(serviceLine1_List)
+        self.db.session.commit()
+
+        # Now add the Service Line 2's
+        serviceLine2_List = []
+        for sl2 in sl2_set:
+            # First find the index in original list
+            sl2_original_index = sl2_list.index(sl2)
+            sl1 = sl1_list[sl2_original_index]
+            sl1_id = self.find_DB_id(sl1, ServiceLine1)
+            sl2_db = ServiceLine2(sl2, sl1_id)
+            serviceLine2_List.append(sl2_db)
+            
+        self.db.session.add_all(serviceLine2_List)
+        self.db.session.commit()
         
-        self.db.insert_many('service_line_1', 'sl1_keyword', sl1_set)
-        self.db.insert_many('service_line_2', 'sl2_keyword', sl2_set)
-        self.db.insert_many('service_line_3', 'sl3_keyword', sl3_set)        
-        self.db.insert_many('keyword_table', 'keyword', serialized_col)        
+        # Now add the Service Line 3's
+        serviceLine3_List = []
+        for sl3 in sl3_set:
+            # First find the index in original list
+            sl3_original_index = sl3_list.index(sl3)
+            sl2 = sl2_list[sl3_original_index]
+            sl2_id = self.find_DB_id(sl2, ServiceLine2)
+            sl3_db = ServiceLine3(sl3, sl2_id)
+            serviceLine3_List.append(sl3_db)
+            
+        self.db.session.add_all(serviceLine3_List)
+        self.db.session.commit()
         
-        # Generate the relationship in memory
+        assert(len(keywords_column) == len(sl1_list))
+        assert(len(keywords_column) == len(sl2_list)) 
+        assert(len(keywords_column) == len(sl3_list)) 
+
+        # Now add the Keywords
+        keywordList = []        
         total_items = len(sl1_list)
-            
+
         for index in range(0, total_items):
-            sl1 = sl1_list[index]
-            sl2 = sl2_list[index]
             sl3 = sl3_list[index]
-            keyword_list = keywords_column[index]
+            sl3_id = self.find_DB_id(sl3, ServiceLine3)
+            kwrd_list = keywords_column[index]
             
-            for kwrd in keyword_list:
-                rel = KeywordRelationship(sl1, sl2, sl3, kwrd)
-                self.relationships.append(rel)
+            for kwrd in kwrd_list:
+                if kwrd.strip() != "":
+                    k = KeywordTable(kwrd, sl3_id)
+                    keywordList.append(k)
+                    
         
-        return self.relationships
+        self.db.session.add_all(keywordList)
+        self.db.session.commit()          
     
-    def create_relationship_db(self, relationships):
-        ''' relationships: A List of relationship instance object '''
-        global conn
-        kwrd = ""
-        data_list = []
-        for rel in relationships:
-            sl1_id, kwrd = self.db.query("service_line_1", ["sl1_keyword"], "sl1_keyword", rel.sl1)
-            sl2_id, kwrd = self.db.query("service_line_2", ["sl2_keyword"], "sl2_keyword", rel.sl2)
-            sl3_id, kwrd = self.db.query("service_line_3", ["sl3_keyword"], "sl3_keyword", rel.sl3)
-            kwrd_id, kwrd = self.db.query("keyword_table", ["keyword"], "keyword", rel.keyword)
-            
-            temp_list = [sl1_id, sl2_id, sl3_id, kwrd_id]
-            data_list.append(temp_list)
-            
-        self.db.insert_many_list('relationship', ["sl1_index", "sl2_index", "sl3_index", "keyword_index"], data_list)
+    def find_DB_id(self, wrd, className):
+        obj = self.db.session.query(className).filter(className.keyword == wrd).one()
+        return obj.id
+    
+#    def create_relationship_db(self, sl1_list, sl2_list, sl3_list, keywords_column):
+#        ''' relationships: A List of relationship instance object '''
+#
+#        assert(len(keywords_column) == len(sl1_list))
+#        assert(len(keywords_column) == len(sl2_list)) 
+#        assert(len(keywords_column) == len(sl3_list)) 
+#
+#        total_items = len(sl1_list)
+#
+#        relationshipList = []
+#
+#        for index in range(0, total_items):
+#            sl1 = sl1_list[index]
+#            sl2 = sl2_list[index]
+#            sl3 = sl3_list[index]
+#            kwrd_list = keywords_column[index]
+#            
+#            for kwrd in kwrd_list:
+#                if kwrd.strip() != "":
+#                    # Find the id for sl1, sl2, sl3 & kwrd
+#                    sl1_id = self.find_DB_id(sl1, ServiceLine1)
+#                    sl2_id = self.find_DB_id(sl2, ServiceLine2)
+#                    sl3_id = self.find_DB_id(sl3, ServiceLine3)
+#                    kwrd_id = self.find_DB_id(kwrd, KeywordTable)
+#                    r = Relationship(sl1_id, sl2_id, sl3_id, kwrd_id)
+#                    relationshipList.append(r)
+#                
+#        self.db.session.add_all(relationshipList)
+#        self.db.session.commit()
         
 def createKeywordDB():
     ''' Read Excel File and recreate the Database '''
-    db_filename = 'sqlite_dbs/keywords.db'
-    schema_filename = 'sqlite_dbs/keywords_schema.sql'
-    db = DB(db_filename, schema_filename)
+    db = getKeywordDB()
+    db.createTable()
     excel_interface = KeywordExcelInterface(db)
     relationships = excel_interface.read_excel('DataParsing/automapping.xls')
     excel_interface.create_relationship_db(relationships)

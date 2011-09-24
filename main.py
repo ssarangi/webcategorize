@@ -1,6 +1,5 @@
 import sys
 from globals.global_imports import *
-from htmlExtraction.KeywordParse import *
 from crawler.crawler import *
 from DataParsing.KeywordExtraction import *
 from DataParsing.URLParsing import *
@@ -8,6 +7,7 @@ from DB.UrlInterface import *
 from DB.alchemy import *
 from PyQt4 import QtGui
 from globals.settings import settings
+from htmlExtraction.GenerateStatistics import *
 import gui.MainWindow
 
 __version__ = "0.1"
@@ -69,12 +69,13 @@ def parse_options():
     parser.add_option("-U", "--url_parse", action="store_true", default=False,
                       dest="url_parse", help="Parse URL's from Excel")
 
-    opts, args = parser.parse_args()
+    parser.add_option("--crawler", action="store_true", default=False,
+                      dest="run_crawler", help="Run the crawler")
 
-    # Currently, we don't need any arguments
-#    if len(args) < 1:
-#        parser.print_help(sys.stderr)
-#        raise SystemExit, 1
+    parser.add_option("--stats", action="store_true", default=False,
+                      dest="run_stats", help="Generate the statistics")
+
+    opts, args = parser.parse_args()
 
     if opts.out_links and opts.out_urls:
         parser.print_help(sys.stderr)
@@ -94,8 +95,8 @@ def main():
 
     app = QtGui.QApplication(sys.argv)
     
-    mainWindow = gui.MainWindow.MainWindow(settings.version())
-    mainWindow.show()
+    # mainWindow = gui.MainWindow.MainWindow(settings.version())
+    # mainWindow.show()
     
     if opts.keyword_parse:
         createKeywordDB()
@@ -105,6 +106,21 @@ def main():
         createUrlDB()
         exit()
 
+    # showDB(getKeywordDB(), ServiceLine1)
+    if (opts.run_crawler):
+        # crawlerThread = CrawlerThread(opts)
+        # crawlerThread.start()
+        while True:
+            print "Waiting for URL's to Crawl"
+            CrawlerMain(opts)
+    
+    if (opts.run_stats):
+        #statisticsThread = GenerateStatisticThread()
+        #statisticsThread.start()
+        while True:
+            print "Waiting for URL's to Analyze"
+            GenerateStatisticsMain()
+        
     # showDB(getUrlDB(), Company)
     # exit()
         
@@ -113,7 +129,6 @@ def main():
 
     # showDB(getUrlDB(), URL)
         
-    sys.exit(app.exec_())
-    
+            
 if __name__ == "__main__":
     main()

@@ -6,25 +6,37 @@ from xlrd import open_workbook
 import optparse
 import sys
 from string import *
-from DB.DBInterface import *
 from DB.alchemy import *
 from types import *
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 from PyQt4 import QtSql
+from DB import alchemy
+
+urlDB = None
+keywordDB = None
 
 def getUrlDB():
+    global urlDB
     db_filename = 'sqlite_dbs/urls.db'
-    schema_filename = 'sqlite_dbs/urls_schema.sql'
-    db = Alchemy(db_filename)
-    # db = DB(db_filename, schema_filename)
-    return db
+    if (urlDB == None):
+        urlDB = Alchemy(db_filename, alchemy.URLBase)
+        
+    _Session = sessionmaker(bind=urlDB.engine)
+    session = _Session()
+    urlDB.session = session        
+    return urlDB
 
 def getKeywordDB():
+    global keywordDB
     db_filename = 'sqlite_dbs/keywords.db'
-    schema_filename = 'sqlite_dbs/keywords_schema.sql'
-    db = DB(db_filename, schema_filename)
-    return db
+    if (keywordDB == None):
+        keywordDB = Alchemy(db_filename, alchemy.KeywordBase)
+
+    _Session = sessionmaker(bind=keywordDB.engine)
+    session = _Session()
+    keywordDB.session = session        
+    return keywordDB
 
 def getCrawlerLogDB():
     db_filename = 'sqlite_dbs/crawlerLogs.db'

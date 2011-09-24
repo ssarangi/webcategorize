@@ -10,16 +10,6 @@ class URLExcelInterface:
         self.relationships = [] 
         self.db = db
         
-    def __insert(self, tableName, columnName, dataSet):
-        ''' Use this function to insert multiple inserts into DB
-            tableName: String: DB Table name
-            columnName: String: DB Column in DB Table
-            dataSet: List: 
-        '''
-        if (len(dataSet) > 0):
-            for d in dataSet:
-                self.db.insert(tableName, [columnName], [d])
-    
     def read_excel(self, filename):
         ''' sl are service lines '''
         wb = open_workbook(filename)
@@ -47,8 +37,8 @@ class URLExcelInterface:
                 c = Company(company_list[i], url_list[i])
                 db_list.append(c)
         
-        self.db.addAll(db_list)        
-        self.db.commit()
+        self.db.session.add_all(db_list)        
+        self.db.session.commit()
         # self.db.insert_many_list('Company', ['name', 'base_url'], db_list)
         
     
