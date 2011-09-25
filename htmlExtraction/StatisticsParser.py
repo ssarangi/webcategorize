@@ -1,6 +1,7 @@
 import lxml.etree
 import string, StringIO
 from globals.Utils import *
+from DB.KeywordInterface import *
 
 global debug
 
@@ -44,21 +45,20 @@ def extract_key_value_pair(attribs, attrib_key_1, key, attrib_key_2):
 
 
 class TagStatistics:
-    def __init__(self, tag, dbModel):
+    def __init__(self, tag):
         if (tag.strip() == ""):
             raise ValueError
         self.tag = tag
         self.tag_stats = {}
         self.kwrd_relationship = {}
-        self.dbModel = dbModel
     
-    def add_keyword(self, kwrd, count):
-        self.tag_stats[kwrd] = count
-        self.kwrd_relationship[kwrd] = self.dbModel.keyword_relationship(kwrd)
+    def add_keyword(self, kwrdObj, count):
+        self.tag_stats[kwrdObj] = count
+        self.kwrd_relationship[kwrdObj] = KeywordInterface.getRelationship(kwrdObj)
         
-    def get_keyword_count(self, kwrd):
+    def get_keyword_count(self, kwrdObj):
         try:
-            return self.tag_stats[kwrd]
+            return self.tag_stats[kwrdObj]
         except:
             return 0
         
@@ -66,36 +66,35 @@ class TagStatistics:
         ret_str =  "\nStatistics for Tag: %s\n" % self.tag
         for k, v in self.tag_stats.items():
             rel = self.kwrd_relationship[k]
-            ret_str +=  "Keyword: %s\n" % k
+            ret_str +=  "Keyword: %s\n" % k.keyword
             ret_str += "Count: %s\n" % str(v)
-            ret_str += "Service Line 1: %s\n" % rel.sl1
-            ret_str += "Service Line 2: %s\n" % rel.sl2
-            ret_str += "Service Line 3: %s\n" % rel.sl3
+            ret_str += "Service Line 1: %s\n" % rel[0]
+            ret_str += "Service Line 2: %s\n" % rel[1]
+            ret_str += "Service Line 3: %s\n" % rel[2]
                          
         return ret_str
         
 class PageStatistics:
-    def __init__(self, url, dbModel):
-        self.url = url
-        self.dbModel = dbModel
+    def __init__(self, urlObj):
+        self.urlObj = urlObj
+        self.url = urlObj.address
         self.tag_statistics = {}
         
     def _add_tag(self, tag):
-        tag_stats = TagStatistics(tag, self.dbModel)
+        tag_stats = TagStatistics(tag)
         self.tag_statistics[tag] = tag_stats
         
     def update_count(self, tag, keyword, count):
         try:
             self.tag_statistics[tag].add_keyword(keyword, count)
         except:
-            self.tag_statistics[tag] = TagStatistics(tag, self.dbModel)
+            self.tag_statistics[tag] = TagStatistics(tag)
             self.tag_statistics[tag].add_keyword(keyword, count)
         
     def __str__(self):
         ret_str = ""
         ret_str =  "Page Statistics for Page: %s\n" % (self.url)
         ret_str += ''.join('=' for i in range(0, len(ret_str))) + "\n"
-        # ret_str += "================================================================\n"
         for tag, tag_stats in self.tag_statistics.items():
             ret_str += str(tag_stats)
             
@@ -175,7 +174,8 @@ class CollectorTarget:
         self.events.append("close")
         
 class StatisticsParser:
-    def __init__(self, html_file, dbModel):
+    def __init__(self, urlObj, db):
+        ''' This is the URL DB object '''
         self.collector_parser = lxml.etree.HTMLParser(remove_blank_text=True,
                                                       remove_comments=True,
                                                       target=CollectorTarget())
@@ -184,16 +184,14 @@ class StatisticsParser:
                                             remove_comments=True)
 
         
-        fptr = open(html_file, 'r')
-        html = fptr.read()
+        self.html = urlObj.content
         
-        self.tree = lxml.etree.parse(StringIO.StringIO(html), parser=self.parser)
-        # self.tree = lxml.etree.parse(html_file, parser = self.collector_parser)
+        self.tree = lxml.etree.parse(StringIO.StringIO(self.html), parser=self.parser)
         doc_info = self.tree.docinfo
         self.encoding = doc_info.encoding
-        self.dbModel = dbModel
+        self.db = db
         self.tag_text = {}
-        self.page_statistics = PageStatistics(url='index.html', dbModel=self.dbModel)
+        self.page_statistics = PageStatistics(urlObj)
         
     def accumulate_text_from_tags(self):
         global html_tag_list
@@ -204,10 +202,10 @@ class StatisticsParser:
         
         self.tag_text = handle.return_tag_text_content()
     
-    def _search_for_keyword(self, tag, keyword, text):
-        count = StringUtils.get_word_frequency(text, keyword)
+    def _search_for_keyword(self, tag, keywordObj, text):
+        count = StringUtils.get_word_frequency(text, keywordObj.keyword)
         if (count > 0):
-            self.page_statistics.update_count(tag, keyword, count)
+            self.page_statistics.update_count(tag, keywordObj, count)
                     
     def search_for_keywords(self, keywords):
         ''' Search for all the keywords in the accumulated text '''
