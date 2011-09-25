@@ -1,7 +1,6 @@
 from xlrd import *
 from globals.Utils import *
 from globals.global_imports import *
-from DB.DBInterface import *
 from DB.alchemy import *
 
 class URLExcelInterface:

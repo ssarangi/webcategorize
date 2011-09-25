@@ -1,7 +1,6 @@
 from xlrd import open_workbook
 from globals.global_imports import *
 from globals.Utils import *
-from DB.DBInterface import *
 from DB.alchemy import *
 
 class KeywordExcelInterface:
