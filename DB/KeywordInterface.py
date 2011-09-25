@@ -14,3 +14,7 @@ class KeywordInterface:
         
         return (sl1_obj, sl2_obj, sl3_obj)
         
+    @staticmethod
+    def getKeywordByID(db, keyword_id):
+        return db.session.query(KeywordTable).filter(KeywordTable.id == keyword_id).one()
+        

@@ -18,7 +18,8 @@ keywordDB = None
 
 def getUrlDB():
     global urlDB
-    db_filename = 'sqlite_dbs/urls.db'
+    # db_filename = 'sqlite_dbs/urls.db'
+    db_filename = "urls"
     if (urlDB == None):
         urlDB = Alchemy(db_filename, alchemy.URLBase)
         
@@ -29,7 +30,8 @@ def getUrlDB():
 
 def getKeywordDB():
     global keywordDB
-    db_filename = 'sqlite_dbs/keywords.db'
+    # db_filename = 'sqlite_dbs/keywords.db'
+    db_filename = "keywords"
     if (keywordDB == None):
         keywordDB = Alchemy(db_filename, alchemy.KeywordBase)
 

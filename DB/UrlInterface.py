@@ -22,12 +22,12 @@ class UrlInterface:
     def urlAnalyzed(db, url):
         ''' url: Object '''
         url.analyzed = 1
-        db.session.commit()
+        db.session.flush()
     
     @staticmethod
     def urlError(db, url):
         url.analyzed = -1
-        db.session.commit()
+        db.session.flush()
     
     @staticmethod
     def unAnalyzedURLs(db):
@@ -35,4 +35,8 @@ class UrlInterface:
         urls = sql_query.all()
         return urls
     
-    
+    @staticmethod
+    def analyzedURLs(db):
+        sql_query = db.session.query(URL).filter(URL.analyzed == 1).order_by(URL.company_index)
+        urls = sql_query.all()
+        return urls

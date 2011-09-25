@@ -1,4 +1,5 @@
 import sys
+import time
 from globals.global_imports import *
 from crawler.crawler import *
 from DataParsing.KeywordExtraction import *
@@ -8,7 +9,9 @@ from DB.alchemy import *
 from PyQt4 import QtGui
 from globals.settings import settings
 from htmlExtraction.GenerateStatistics import *
+from ResultGeneration.ResultGenerator import *
 import gui.MainWindow
+
 
 __version__ = "0.1"
 USAGE = "%prog [options] <url>"
@@ -44,7 +47,7 @@ def parse_options():
             help="Get links for specified url only")    
 
     parser.add_option("-d", "--depth",
-            action="store", type="int", default=30, dest="depth_limit",
+            action="store", type="int", default=3, dest="depth_limit",
             help="Maximum depth to traverse")
 
     parser.add_option("-c", "--confine",
@@ -74,6 +77,9 @@ def parse_options():
 
     parser.add_option("--stats", action="store_true", default=False,
                       dest="run_stats", help="Generate the statistics")
+
+    parser.add_option("--results", action="store_true", default=False,
+                      dest="results", help="Generate the results")
 
     opts, args = parser.parse_args()
 
@@ -113,13 +119,21 @@ def main():
         while True:
             print "Waiting for URL's to Crawl"
             CrawlerMain(opts)
+            time.sleep(10)
     
+    keywordDB = getKeywordDB()
+    urlDB     = getUrlDB()
+
     if (opts.run_stats):
         #statisticsThread = GenerateStatisticThread()
         #statisticsThread.start()
         while True:
             print "Waiting for URL's to Analyze"
-            GenerateStatisticsMain()
+            GenerateStatisticsMain(urlDB, keywordDB)
+            time.sleep(10)
+            
+    if (opts.results):
+        ResultGeneratorMain()
         
     # showDB(getUrlDB(), Company)
     # exit()

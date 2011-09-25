@@ -1,8 +1,15 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, TEXT, ForeignKey
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import relationship, backref
+
+from sqlalchemy.dialects.mysql import \
+        BIGINT, BINARY, BIT, BLOB, BOOLEAN, CHAR, DATE, \
+        DATETIME, DECIMAL, DECIMAL, DOUBLE, ENUM, FLOAT, INTEGER, \
+        LONGBLOB, LONGTEXT, MEDIUMBLOB, MEDIUMINT, MEDIUMTEXT, NCHAR, \
+        NUMERIC, NVARCHAR, REAL, SET, SMALLINT, TEXT, TIME, TIMESTAMP, \
+        TINYBLOB, TINYINT, TINYTEXT, VARBINARY, VARCHAR, YEAR
 
 KeywordBase = declarative_base()
 URLBase = declarative_base()
@@ -12,7 +19,8 @@ class Alchemy:
         self.filename = filename
         self.username = username
         self.password = password
-        self.engine = create_engine(('sqlite:///%s' % (filename)))
+        # self.engine = create_engine(('sqlite:///%s' % (filename)))
+        self.engine = create_engine('mysql+mysqldb://root:blastoff@localhost/%s' % filename, pool_recycle=3600)
         self._Session = sessionmaker(bind=self.engine)
         self.session = self._Session()
         self.base = base
@@ -34,7 +42,7 @@ class ServiceLine1(KeywordBase):
     __tablename__ = 'ServiceLine1'
     
     id = Column(Integer, primary_key=True, nullable=False)
-    keyword = Column(String, unique=True)
+    keyword = Column(VARCHAR(255), unique=True, nullable=False)
     
     def __init__(self, kwrd):
         self.keyword = kwrd
@@ -51,7 +59,7 @@ class ServiceLine2(KeywordBase):
     __tablename__ = 'ServiceLine2'
     
     id = Column(Integer, primary_key=True, nullable=False)
-    keyword = Column(String, unique=True)
+    keyword = Column(VARCHAR(255), unique=True, nullable=False)
     sl1_index = Column(Integer, ForeignKey('ServiceLine1.id'))
     
     serviceLine1 = relationship('ServiceLine1', backref='serviceline2_list')
@@ -71,7 +79,7 @@ class ServiceLine3(KeywordBase):
     __tablename__ = 'ServiceLine3'
     
     id = Column(Integer, primary_key=True, nullable=False)
-    keyword = Column(String, unique=True)
+    keyword = Column(VARCHAR(255), unique=True, nullable=False)
     sl2_index = Column(Integer, ForeignKey('ServiceLine2.id'))
     
     serviceLine2 = relationship('ServiceLine2', backref='serviceline3_list')
@@ -91,7 +99,7 @@ class KeywordTable(KeywordBase):
     __tablename__ = 'KeywordTable'    
     
     id = Column(Integer, primary_key=True, nullable=False)
-    keyword = Column(String)
+    keyword = Column(VARCHAR(255), nullable=False)
     sl3_index = Column(Integer, ForeignKey('ServiceLine3.id'))
     
     serviceLine3 = relationship('ServiceLine3', backref='keywords_list')
@@ -107,42 +115,42 @@ class KeywordTable(KeywordBase):
     def __repr__(self):
         return  "<Keyword Table: (%i,'%s')>" % (self.id, self.keyword)
     
-class Relationship(KeywordBase):
-    __tablename__ = 'Relationship'
-    
-    id = Column(Integer, primary_key=True)
-    sl1_index = Column(Integer, ForeignKey('ServiceLine1.id'))
-    sl2_index = Column(Integer, ForeignKey('ServiceLine2.id'))
-    sl3_index = Column(Integer, ForeignKey('ServiceLine3.id'))
-    keyword_index = Column(Integer, ForeignKey('KeywordTable.id'))
-    
-    keyword = relationship("KeywordTable", uselist=False, backref="relationship")
-    serviceLine1 = relationship("ServiceLine1", backref="relationships")
-    serviceLine2 = relationship("ServiceLine2", backref="relationships")
-    serviceLine3 = relationship("ServiceLine3", backref="relationships")
-    
-    
-    def __init__(self, sl1_id, sl2_id, sl3_id, kwrd_id):
-        self.sl1_index = sl1_id
-        self.sl2_index = sl2_id
-        self.sl3_index = sl3_id
-        self.keyword_index = kwrd_id
-    
-    @staticmethod    
-    def tableName():
-        return Relationship.__tablename__    
-    
-    def __repr__(self):
-        return  "<Relationship: (%i, %i, %i, %i, %i)>" % (self.id, self.sl1_index, self.sl2_index,
-                                                          self.sl3_index, self.keyword_index)
-    
+#class Relationship(KeywordBase):
+#    __tablename__ = 'Relationship'
+#    
+#    id = Column(Integer, primary_key=True)
+#    sl1_index = Column(Integer, ForeignKey('ServiceLine1.id'))
+#    sl2_index = Column(Integer, ForeignKey('ServiceLine2.id'))
+#    sl3_index = Column(Integer, ForeignKey('ServiceLine3.id'))
+#    keyword_index = Column(Integer, ForeignKey('KeywordTable.id'))
+#    
+#    keyword = relationship("KeywordTable", uselist=False, backref="relationship")
+#    serviceLine1 = relationship("ServiceLine1", backref="relationships")
+#    serviceLine2 = relationship("ServiceLine2", backref="relationships")
+#    serviceLine3 = relationship("ServiceLine3", backref="relationships")
+#    
+#    
+#    def __init__(self, sl1_id, sl2_id, sl3_id, kwrd_id):
+#        self.sl1_index = sl1_id
+#        self.sl2_index = sl2_id
+#        self.sl3_index = sl3_id
+#        self.keyword_index = kwrd_id
+#    
+#    @staticmethod    
+#    def tableName():
+#        return Relationship.__tablename__    
+#    
+#    def __repr__(self):
+#        return  "<Relationship: (%i, %i, %i, %i, %i)>" % (self.id, self.sl1_index, self.sl2_index,
+#                                                          self.sl3_index, self.keyword_index)
+#    
     
 class Company(URLBase):
     __tablename__ = 'Company'
     
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
-    base_url = Column(String, nullable=False)
+    name = Column(TEXT, nullable=False)
+    base_url = Column(TEXT, nullable=False)
     crawled = Column(Integer, default=0)
     
     def __init__(self, name, base_url, crawled=0):
@@ -163,8 +171,8 @@ class URL(URLBase):
     __tablename__ = 'URL'
     
     id = Column(Integer, primary_key=True)
-    address = Column(String, nullable=False)
-    content = Column(String)
+    address = Column(TEXT, unique=False, nullable=False)
+    content = Column(TEXT)
     analyzed = Column(Integer, default=0)
     company_index = Column(Integer, ForeignKey('Company.id'))
 
@@ -188,7 +196,7 @@ class TagStats(URLBase):
     __tablename__ = 'TagStats'
     
     id = Column(Integer, primary_key=True)
-    tag = Column(String, nullable=False, unique=True)
+    tag = Column(TEXT, nullable=False)
     url_index = Column(Integer, ForeignKey('URL.id'))
     
     url = relationship("URL", backref=backref('tags'))
@@ -204,20 +212,22 @@ class TagStats(URLBase):
     def __repr__(self):
         return "<Tag: (%i, %s)>" % (self.id, self.tag)
     
-def KeywordStats(URLBase):
+class KeywordStats(URLBase):
     __tablename__ = 'KeywordStats'
     
     id = Column(Integer, primary_key=True)
-    keyword = Column(String, nullable=False)
+    keyword = Column(TEXT, nullable=False)
     count = Column(Integer, nullable=False, default=0)
     tagStat_index = Column(Integer, ForeignKey('TagStats.id'))
+    keywordTable_index = Column(Integer, nullable=False)
     
     tag = relationship("TagStats", backref=backref('keywords', order_by=count))
     
-    def __init__(self, keyword, count, tag_id):
+    def __init__(self, keyword, count, tag_id, orig_keyword_id):
         self.keyword = keyword
         self.count = count
         self.tagStat_index = tag_id
+        self.keywordTable_index = orig_keyword_id
     
     @staticmethod
     def tableName():

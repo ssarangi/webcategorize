@@ -180,7 +180,7 @@ class Crawler(object):
 
         while not q.empty():
             this_url, depth = q.get()
-            
+                        
             #Non-URL-specific filter: Discard anything over depth limit
             if depth > self.depth_limit:
                 continue
@@ -202,7 +202,7 @@ class Crawler(object):
                     print "Following Link: %s" % this_url
                     page = Fetcher(this_url)
                     page.fetch()
-                    content = page.content
+                    content = page.content.encode("utf-8")
                     # URL
                     url = URL(this_url, content, 0, self.company.id)
                     # Now we have the url and the content. Add it to the DB

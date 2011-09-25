@@ -52,6 +52,7 @@ class KeywordExcelInterface:
 
         # Now create the DB objects
         serviceLine1_List = [ServiceLine1(sl1) for sl1 in sl1_set]
+                
         self.db.session.add_all(serviceLine1_List)
         self.db.session.commit()
 
@@ -143,7 +144,7 @@ def createKeywordDB():
     db.createTable()
     excel_interface = KeywordExcelInterface(db)
     relationships = excel_interface.read_excel('DataParsing/automapping.xls')
-    excel_interface.create_relationship_db(relationships)
+    # excel_interface.create_relationship_db(relationships)
     
 if __name__ == "__main__":
     createKeywordDB()
