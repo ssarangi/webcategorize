@@ -11,14 +11,9 @@ def addPageStatisticsToDB(url, db, pageStats):
     KeywordDict = {}
     for tag, tagStatistics in pageStats.tag_statistics.items():
         tagObj = TagStats(tag, url.id)
-        # db.session.add(tagObj)
         tagObjList.append(tagObj)
         for kwrd, count in tagStatistics.tag_stats.items():
-            # k_obj = KeywordStats(kwrd.keyword, count, tagObj.id)
             KeywordDict[(kwrd, count)] = tagObj
-            # db.session.add(k_obj)
-            # db.session.commit()
-            # tagObj.keywords.append(k_obj)
             
     db.session.add_all(tagObjList)
     db.session.commit()

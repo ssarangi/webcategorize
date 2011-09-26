@@ -12,32 +12,25 @@ from PyQt4 import QtGui
 from PyQt4 import QtCore
 from PyQt4 import QtSql
 from DB import alchemy
+from globals.settings import settings
 
 urlDB = None
 keywordDB = None
 
 def getUrlDB():
     global urlDB
-    # db_filename = 'sqlite_dbs/urls.db'
-    db_filename = "urls"
+    dbName = "urls"
     if (urlDB == None):
-        urlDB = Alchemy(db_filename, alchemy.URLBase)
+        urlDB = Alchemy(dbName, alchemy.URLBase, settings.username, settings.password)
         
-    _Session = sessionmaker(bind=urlDB.engine)
-    session = _Session()
-    urlDB.session = session        
     return urlDB
 
 def getKeywordDB():
     global keywordDB
-    # db_filename = 'sqlite_dbs/keywords.db'
-    db_filename = "keywords"
+    dbName = "keywords"
     if (keywordDB == None):
-        keywordDB = Alchemy(db_filename, alchemy.KeywordBase)
+        keywordDB = Alchemy(dbName, alchemy.KeywordBase, settings.username, settings.password)
 
-    _Session = sessionmaker(bind=keywordDB.engine)
-    session = _Session()
-    keywordDB.session = session        
     return keywordDB
 
 def getCrawlerLogDB():
@@ -53,4 +46,3 @@ def assertType(data, expected):
         msg = "Error: %s expected. Given %s" % (expected, type(data))
         raise(msg)
     
-__version__ = "1.0"

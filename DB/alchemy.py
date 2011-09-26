@@ -29,84 +29,38 @@ class Alchemy:
         print "Creating Table"
         self.base.metadata.create_all(self.engine)
         
-#    def addObject(self, obj):
-#        self.session.add(obj)
-#        
-#    def addAll(self, objList):
-#        self.session.add_all(objList)
-#        
-#    def commit(self):
-#        self.session.commit()
+class ServiceLine(KeywordBase):
+    __tablename__ = 'ServiceLine'
+    
+    id = Column(Integer, primary_key=True, nullable=False)
+    serviceLine1 = Column(VARCHAR(255), nullable=False)
+    serviceLine2 = Column(VARCHAR(255), nullable=False)
+    serviceLine3 = Column(VARCHAR(255), nullable=False)
         
-class ServiceLine1(KeywordBase):
-    __tablename__ = 'ServiceLine1'
-    
-    id = Column(Integer, primary_key=True, nullable=False)
-    keyword = Column(VARCHAR(255), unique=True, nullable=False)
-    
-    def __init__(self, kwrd):
-        self.keyword = kwrd
-    
-    @staticmethod    
-    def tableName():
-        return ServiceLine1.__tablename__
-    
-    def __repr__(self):
-        return  "<Service Line 1: (%i,'%s')>" % (self.id, self.keyword)
-    
-    
-class ServiceLine2(KeywordBase):
-    __tablename__ = 'ServiceLine2'
-    
-    id = Column(Integer, primary_key=True, nullable=False)
-    keyword = Column(VARCHAR(255), unique=True, nullable=False)
-    sl1_index = Column(Integer, ForeignKey('ServiceLine1.id'))
-    
-    serviceLine1 = relationship('ServiceLine1', backref='serviceline2_list')
-
-    def __init__(self, kwrd, sl1_id):
-        self.keyword = kwrd
-        self.sl1_index = sl1_id
+    def __init__(self, serviceLine1, serviceLine2, serviceLine3):
+        self.serviceLine1 = serviceLine1
+        self.serviceLine2 = serviceLine2
+        self.serviceLine3 = serviceLine3
 
     @staticmethod
     def tableName():
-        return ServiceLine2.__tablename__
+        return ServiceLine.__tablename__
 
     def __repr__(self):
-        return  "<Service Line 2: (%i,'%s')>" % (self.id, self.keyword)
-
-class ServiceLine3(KeywordBase):
-    __tablename__ = 'ServiceLine3'
-    
-    id = Column(Integer, primary_key=True, nullable=False)
-    keyword = Column(VARCHAR(255), unique=True, nullable=False)
-    sl2_index = Column(Integer, ForeignKey('ServiceLine2.id'))
-    
-    serviceLine2 = relationship('ServiceLine2', backref='serviceline3_list')
-
-    def __init__(self, kwrd, sl2_id):
-        self.keyword = kwrd
-        self.sl2_index = sl2_id
-
-    @staticmethod
-    def tableName():
-        return ServiceLine3.__tablename__
-
-    def __repr__(self):
-        return  "<Service Line 3: (%i,'%s')>" % (self.id, self.keyword)
+        return  "<Service Line: (%i,%s, %s, %s)>" % (self.id, self.serviceLine1, self.serviceLine2, self.serviceLine3)
 
 class KeywordTable(KeywordBase):
     __tablename__ = 'KeywordTable'    
     
     id = Column(Integer, primary_key=True, nullable=False)
     keyword = Column(VARCHAR(255), nullable=False)
-    sl3_index = Column(Integer, ForeignKey('ServiceLine3.id'))
+    serviceLine_index = Column(Integer, ForeignKey('ServiceLine.id'))
     
-    serviceLine3 = relationship('ServiceLine3', backref='keywords_list')
+    serviceLine = relationship('ServiceLine', backref='keywords_list')
     
     def __init__(self, kwrd, sl3_id):
         self.keyword = kwrd
-        self.sl3_index = sl3_id
+        self.serviceLine_index = sl3_id
     
     @staticmethod    
     def tableName():
@@ -114,37 +68,7 @@ class KeywordTable(KeywordBase):
     
     def __repr__(self):
         return  "<Keyword Table: (%i,'%s')>" % (self.id, self.keyword)
-    
-#class Relationship(KeywordBase):
-#    __tablename__ = 'Relationship'
-#    
-#    id = Column(Integer, primary_key=True)
-#    sl1_index = Column(Integer, ForeignKey('ServiceLine1.id'))
-#    sl2_index = Column(Integer, ForeignKey('ServiceLine2.id'))
-#    sl3_index = Column(Integer, ForeignKey('ServiceLine3.id'))
-#    keyword_index = Column(Integer, ForeignKey('KeywordTable.id'))
-#    
-#    keyword = relationship("KeywordTable", uselist=False, backref="relationship")
-#    serviceLine1 = relationship("ServiceLine1", backref="relationships")
-#    serviceLine2 = relationship("ServiceLine2", backref="relationships")
-#    serviceLine3 = relationship("ServiceLine3", backref="relationships")
-#    
-#    
-#    def __init__(self, sl1_id, sl2_id, sl3_id, kwrd_id):
-#        self.sl1_index = sl1_id
-#        self.sl2_index = sl2_id
-#        self.sl3_index = sl3_id
-#        self.keyword_index = kwrd_id
-#    
-#    @staticmethod    
-#    def tableName():
-#        return Relationship.__tablename__    
-#    
-#    def __repr__(self):
-#        return  "<Relationship: (%i, %i, %i, %i, %i)>" % (self.id, self.sl1_index, self.sl2_index,
-#                                                          self.sl3_index, self.keyword_index)
-#    
-    
+
 class Company(URLBase):
     __tablename__ = 'Company'
     

@@ -32,10 +32,11 @@ class ResultGenerator:
         for kwrdObj in keywords:
             # Get the original keyword object
             origKeywordObj = KeywordInterface.getKeywordByID(self.keywordDB, kwrdObj.keywordTable_index)
-            sl3 = origKeywordObj.serviceLine3
-            sl2 = sl3.serviceLine2
-            sl1 = sl2.serviceLine1
-            text = kwrdObj.keyword + "<br>" + sl1.keyword + "<br>" + sl2.keyword + "<br>" + sl3.keyword
+            serviceLine = origKeywordObj.serviceLine
+            sl3 = serviceLine.serviceLine3
+            sl2 = serviceLine.serviceLine2
+            sl1 = serviceLine.serviceLine1
+            text = kwrdObj.keyword + "<br>" + sl1 + "<br>" + sl2 + "<br>" + sl3
             tableData.append([text, kwrdObj.count])
         
             
